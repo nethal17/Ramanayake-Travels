@@ -4,6 +4,8 @@ import cors from "cors";
 
 import { connectDB } from './lib/db.js';
 
+import authRoutes from "./routes/user.route.js";
+
 dotenv.config();
 
 const app = express();
@@ -20,3 +22,5 @@ app.listen(PORT, () => {
 	console.log("Server is running on http://localhost:" + PORT);
 	connectDB();
 });
+
+app.use("/api/auth", authRoutes);
