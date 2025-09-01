@@ -4,9 +4,9 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
 
-// Helper to generate refresh token
+
 const generateRefreshToken = (userId) => {
-    return jwt.sign({ id: userId }, process.env.JWT_REFRESH_SECRET, { expiresIn: "7d" });
+    return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 };
 
 export const blacklistedTokens = new Set();
@@ -19,7 +19,7 @@ export const sendVerificationCode = async (email, code) => {
     const mailOptions = {
         ...defaultMailOptions,
         to: email,
-        subject: "Your Verification Code - Agri-Waste Marketplace",
+        subject: "Your Verification Code - Ramanayake Travels",
         html: `
             <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <tr>
@@ -38,7 +38,7 @@ export const sendVerificationCode = async (email, code) => {
                                     <table style="margin: 20px auto;">
                                         <tr>
                                             <td style="background-color: #ffffff; padding: 15px 30px; border-radius: 4px;">
-                                                <span style="font-size: 32px; color: #27ae60; letter-spacing: 5px; font-weight: bold;">${code}</span>
+                                                <span style="font-size: 32px; color: #3b82f6; letter-spacing: 5px; font-weight: bold;">${code}</span>
                                             </td>
                                         </tr>
                                     </table>
@@ -129,11 +129,11 @@ export const registerUser = async (req, res) => {
         const mailOptions = {
             ...defaultMailOptions,
             to: user.email,
-            subject: "Welcome to Agri-Waste Marketplace - Verify Your Email",
+            subject: "Welcome to Ramanayake Travels - Verify Your Email",
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
                     <div style="text-align: center; margin-bottom: 30px;">
-                        <h1 style="color: #2c3e50; margin-bottom: 10px;">Welcome to Agri-Waste Marketplace!</h1>
+                        <h1 style="color: #2c3e50; margin-bottom: 10px;">Welcome to Ramanayake Travels!</h1>
                         <p style="color: #7f8c8d; font-size: 16px;">Thank you for registering with us. We're excited to have you on board!</p>
                     </div>
                     
@@ -141,7 +141,7 @@ export const registerUser = async (req, res) => {
                         <p style="color: #34495e; margin-bottom: 20px;">To complete your registration and start using our platform, please verify your email address by clicking the button below:</p>
                         
                         <div style="text-align: center;">
-                            <a href="${verificationURL}" style="display: inline-block; background-color: #27ae60; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin: 20px 0;">Verify Email Address</a>
+                            <a href="${verificationURL}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin: 20px 0;">Verify Email Address</a>
                         </div>
                         
                         <p style="color: #7f8c8d; font-size: 14px; margin-top: 20px;">If the button above doesn't work, you can also copy and paste the following link into your browser:</p>
@@ -163,12 +163,12 @@ export const registerUser = async (req, res) => {
         await transporter.sendMail(mailOptions);
 
         res.status(201).json({
-            msg: "User registered successfully. Please check your email to verify your account."
+            msg: "User registered. Please check your email to verify your account."
         });
 
     } catch (err) {
         console.log(err);
-        res.status(500).json({ msg: "Server Error" });
+        res.status(500).json({ msg: "Server Error", error: err.message });
     }
 };
 
@@ -178,7 +178,7 @@ export const loginUser = async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ msg: "Invalid credentials" });
+            return res.status(400).json({ msg: "User didn't exist" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -214,7 +214,9 @@ export const loginUser = async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            // Lax is friendlier for local dev (different ports). Use 'none' with secure in prod if cross-site.
+            sameSite: "lax",
+            path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
@@ -235,7 +237,7 @@ export const loginUser = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ msg: "Server Error" });
+        res.status(500).json({ msg: "Server Error", error: err.message });
     }
 };
 
@@ -256,16 +258,17 @@ export const logoutUser = async (req, res) => {
         if (token) {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             blacklistedTokens.add(token);
-            console.log("Token blacklisted:", token);
         }
 
         if (refreshToken) {
             // Remove refresh token from user document
-            const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+            const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
             await User.findByIdAndUpdate(payload.id, { $unset: { refreshToken: "" } });
             res.clearCookie("refreshToken", {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
             });
         }
 
@@ -321,7 +324,7 @@ export const forgotPassword = async (req, res) => {
                                         <table style="margin: 30px auto;">
                                             <tr>
                                                 <td>
-                                                    <a href="${resetURL}" style="display: inline-block; background-color: #27ae60; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
+                                                    <a href="${resetURL}" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -585,7 +588,7 @@ export const deleteUser = async (req, res) => {
                             <p style="color: #34495e;">If you wish to continue using our services, you can register a new account by clicking the button below:</p>
                             
                             <div style="text-align: center; margin: 30px 0;">
-                                <a href="http://localhost:5173/register" style="display: inline-block; background-color: #27ae60; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Register with Us</a>
+                                <a href="http://localhost:5173/register" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Register with Us</a>
                             </div>
                             
                             <p style="color: #34495e;">We look forward to having you back in our community!</p>
@@ -631,7 +634,7 @@ export const deleteUser = async (req, res) => {
                         <p style="color: #34495e;">If you wish to reactivate your account, please login to your account using the button below:</p>
                         
                         <div style="text-align: center; margin: 30px 0;">
-                            <a href="http://localhost:5173/login" style="display: inline-block; background-color: #27ae60; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Login into your Account</a>
+                            <a href="http://localhost:5173/login" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Login into your Account</a>
                         </div>
                         
                         <p style="color: #34495e;">We look forward to having you back in our community!</p>
@@ -756,14 +759,13 @@ export const exportUsers = async (req, res) => {
     }
 };
 
-// Endpoint to refresh access token
 export const refreshAccessToken = async (req, res) => {
     const refreshToken = req.cookies.refreshToken;
     if (!refreshToken) {
         return res.status(401).json({ msg: "No refresh token provided" });
     }
     try {
-        const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
         const user = await User.findById(payload.id);
         if (!user || user.refreshToken !== refreshToken) {
             return res.status(403).json({ msg: "Invalid refresh token" });

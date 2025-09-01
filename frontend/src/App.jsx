@@ -1,15 +1,20 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import React from 'react';
+import { Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+
+import HomePage from './pages/HomePage';
+import { Navbar } from './components/Navbar';
 
 function App() {
-
   return (
-    <div className="min-h-screen">
-      <h1 className="text-4xl font-bold text-center pt-10">Welcome to Ramanayake Travels</h1>
-      <p className="mt-4 text-center text-blue-500">Your one-stop solution for all travel needs.</p>
+    <div className='min-h-screen bg-white'>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+      <Toaster position="top-center" reverseOrder={false} />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
