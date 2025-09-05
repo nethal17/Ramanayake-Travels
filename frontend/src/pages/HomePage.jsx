@@ -1,13 +1,23 @@
-import React from 'react'
-import { Navbar } from '../components/Navbar'
+import React from "react";
+import { Navbar } from "../components/Navbar";
+import { SearchBar } from "../components/SearchBar";
+import { FeaturedVehicles } from "../components/FeaturedVehicles";
+import { DetailsSection } from "../components/DetailsSection";
+import { Reviews } from "../components/Reviews";
+import { Footer } from "../components/Footer";
+
 
 const HomePage = () => {
   return (
     <>
-    <h1 className='text-4xl font-bold text-center pt-8'>Welcome to Ramanayake Travels</h1>
-    <p className='mt-4 text-center text-blue-500'>Your one-stop solution for all travel needs.</p>
+      <Navbar />
+      <SearchBar />
+      <FeaturedVehicles />
+      <DetailsSection />
+      <Reviews />
+      <Footer />
     </>
-  )
-}
+  );
+};
 
-export default HomePage
+export default HomePage;

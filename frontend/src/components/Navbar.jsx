@@ -63,7 +63,7 @@ export const Navbar = () => {
     return (
     <>
         {/* Main Navbar */}
-        <nav className="fixed top-0 z-50 flex items-center justify-between w-full p-3 text-lg  bg-white shadow-md font-normal border-b border-blue-500">
+        <nav className="fixed top-0 z-50 flex lg-hidden items-center justify-between w-full p-3 text-lg  bg-gray-100 shadow-md font-normal">
             {/* Logo */}
             <div className="text-2xl font-bold text-gray-900 pl-6">Ramanayake<span className="text-blue-500"> Travels</span></div>
 
@@ -71,7 +71,7 @@ export const Navbar = () => {
             <button 
             id="menu-button"
             type="button"
-            className="z-50 block md:hidden"
+            className="z-50 block lg:hidden"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label={sidebarOpen ? "Close menu" : "Open menu"}
             aria-expanded={sidebarOpen}
@@ -85,7 +85,7 @@ export const Navbar = () => {
             </button>
 
             {/* Desktop Navigation Links */}
-            <div className="items-center hidden space-x-6 md:flex text-gray-900">
+            <div className="items-center hidden lg:flex space-x-6 text-gray-900">
             <Link to="/" className="hover:text-blue-500">Home</Link>
 
                         {/* Services Dropdown - Desktop */}
@@ -120,7 +120,7 @@ export const Navbar = () => {
             </div>
 
             {/* Desktop Auth Buttons / User Profile */}
-            <div className="hidden space-x-3 md:flex">
+            <div className="hidden space-x-3 lg:flex">
             {isAuthenticated ? (
                                 <div className="relative flex items-center pr-6" ref={userDropdownRef}>
                                     <Dropdown
@@ -314,7 +314,7 @@ export const Navbar = () => {
         )}
 
         {/* Spacer to push content below navbar */}
-        <div className="h-20"></div>
+        <div className="h-9"></div>
 
         {/* Login Dialog */}
     <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} onOpenRegister={() => setRegisterOpen(true)} />
