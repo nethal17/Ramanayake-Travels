@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
-import { Navbar } from './components/Navbar';
 // Layouts
 import CustomerLayout from './layouts/CustomerLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -22,8 +21,7 @@ import AdminVehicleApplications from './components/AdminVehicleApplications';
 import AdminVehiclesList from './pages/AdminVehiclesList';
 import AdminVehicleRegister from './pages/AdminVehicleRegister';
 import CompanyVehicleRegister from './pages/CompanyVehicleRegister';
-import Navbar from './components/Navbar';
-import HomePage from './pages/HomePage';
+
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 

@@ -16,8 +16,8 @@ export const Navbar = () => {
     
     const [openMenu, setOpenMenu] = useState(null); // 'service' | 'user' | null
     const [sidebarOpen, setSidebarOpen] = useState(false);
-        const [loginOpen, setLoginOpen] = useState(false);
-        const [registerOpen, setRegisterOpen] = useState(false);
+    const [loginOpen, setLoginOpen] = useState(false);
+    const [registerOpen, setRegisterOpen] = useState(false);
     const serviceDropdownRef = useRef(null);
     const userDropdownRef = useRef(null);
     const sidebarRef = useRef(null);
