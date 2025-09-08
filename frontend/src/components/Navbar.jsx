@@ -103,10 +103,10 @@ export const Navbar = () => {
                                 >
                                     <ul className="flex flex-col p-2 w-55">
                                         <li role="menuitem">
-                                            <Link to="/organic-waste" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Vehicle Rentals</Link>
+                                            <Link to="/vehicle-registration" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Register Vehicle</Link>
                                         </li>
                                         <li role="menuitem">
-                                            <Link to="/product-listing-form" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Vehicle Registrations</Link>
+                                            <Link to="/organic-waste" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Vehicle Rentals</Link>
                                         </li>
                                         <li role="menuitem">
                                             <Link to="/transport-service" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Transport Service</Link>
@@ -115,6 +115,7 @@ export const Navbar = () => {
                                 </Dropdown>
                         </div>
 
+            <Link to="/fleet" className="hover:text-blue-500">Our Fleet</Link>
             <Link to="/contactus" className="hover:text-blue-500">Contact Us</Link>
             <Link to="/about-us" className="hover:text-blue-500">About Us</Link>
             </div>
@@ -123,33 +124,17 @@ export const Navbar = () => {
             <div className="hidden space-x-3 lg:flex">
             {isAuthenticated ? (
                                 <div className="relative flex items-center pr-6" ref={userDropdownRef}>
-                                    <Dropdown
-                                        align="right"
-                                        isOpen={openMenu === 'user'}
-                                        setIsOpen={(v) => setOpenMenu(v ? 'user' : null)}
-                                        menuId="user-menu"
-                                        menuClassName="w-48"
-                                        button={
-                                            <div className="flex items-center gap-3">
-                                                <span className="hidden lg:inline">{(isAuthLoading || userLoading) ? "Loading..." : user?.email || "No Email"}</span>
-                                                <Avatar
-                                                    src={user?.profilePic}
-                                                    alt="Profile"
-                                                    fallbackSrc={fallbackAvatar}
-                                                    className="object-cover w-[40px] h-[40px] border-2 border-blue-500 rounded-full shadow-md hover:cursor-pointer"
-                                                />
-                                            </div>
-                                        }
-                                    >
-                                        <ul className="flex flex-col p-2">
-                                            <li role="menuitem" className="px-4 py-2 rounded-md cursor-pointer hover:bg-blue-500/20">
-                                                <Link to="/profile">Profile Settings</Link>
-                                            </li>
-                                            <li role="menuitem" className="px-4 py-2 rounded-md cursor-pointer hover:bg-blue-500/20" onClick={handleLogout}>
-                                                Logout
-                                            </li>
-                                        </ul>
-                                    </Dropdown>
+                                    <div className="flex items-center gap-3 pr-6">
+                                        <span className="hidden lg:inline">{(isAuthLoading || userLoading) ? "Loading..." : user?.email || "No Email"}</span>
+                                        <Link to="/profile">
+                                            <Avatar
+                                                src={user?.profilePic}
+                                                alt="Profile"
+                                                fallbackSrc={fallbackAvatar}
+                                                className="object-cover w-[40px] h-[40px] border-2 border-blue-500 rounded-full shadow-md hover:cursor-pointer"
+                                            />
+                                        </Link>
+                                    </div>
                                 </div>
             ) : (
                 <div className="pr-6 space-x-4">
@@ -256,20 +241,20 @@ export const Navbar = () => {
                     <ul className="flex flex-col space-y-2">
                         <li>
                         <Link 
-                            to="/organic-waste" 
+                            to="/vehicle-registration" 
                             className="block py-2 text-gray-700 hover:text-blue-500"
                             onClick={() => setSidebarOpen(false)}
                         >
-                            Buy Products
+                            Register Vehicle
                         </Link>
                         </li>
                         <li>
                         <Link 
-                            to="/product-listing-form" 
+                            to="/organic-waste" 
                             className="block py-2 text-gray-700 hover:text-blue-500"
                             onClick={() => setSidebarOpen(false)}
                         >
-                            List Products
+                            Vehicle Rentals
                         </Link>
                         </li>
                         <li>
@@ -282,9 +267,17 @@ export const Navbar = () => {
                         </Link>
                         </li>
                     </ul>
-                    </div>
+                </div>
                 )}
                 </div>
+                
+                <Link 
+                to="/fleet" 
+                className="py-3 border-b border-gray-200 text-gray-900 hover:text-blue-500"
+                onClick={() => setSidebarOpen(false)}
+                >
+                Our Fleet
+                </Link>
                 
                 <Link 
                 to="/contactus" 
