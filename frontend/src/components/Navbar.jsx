@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { RiArrowDropDownLine, RiMenu3Line, RiCloseLine } from "react-icons/ri";
+import { RiArrowDropDownLine, RiMenu3Line, RiCloseLine, RiUserLine, RiLogoutBoxLine } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
@@ -126,14 +126,46 @@ export const Navbar = () => {
                                 <div className="relative flex items-center pr-6" ref={userDropdownRef}>
                                     <div className="flex items-center gap-3 pr-6">
                                         <span className="hidden lg:inline">{(isAuthLoading || userLoading) ? "Loading..." : user?.email || "No Email"}</span>
-                                        <Link to="/profile">
-                                            <Avatar
-                                                src={user?.profilePic}
-                                                alt="Profile"
-                                                fallbackSrc={fallbackAvatar}
-                                                className="object-cover w-[40px] h-[40px] border-2 border-blue-500 rounded-full shadow-md hover:cursor-pointer"
-                                            />
-                                        </Link>
+                                        <Dropdown
+                                            isOpen={openMenu === 'user'}
+                                            setIsOpen={(v) => setOpenMenu(v ? 'user' : null)}
+                                            menuId="user-menu"
+                                            align="right"
+                                            button={
+                                                <Avatar
+                                                    src={user?.profilePic}
+                                                    alt="Profile"
+                                                    fallbackSrc={fallbackAvatar}
+                                                    className="object-cover w-[40px] h-[40px] border-2 border-blue-500 rounded-full shadow-md hover:cursor-pointer"
+                                                />
+                                            }
+                                        >
+                                            <ul className="flex flex-col p-2 w-50">
+                                                <li role="menuitem">
+                                                    <Link 
+                                                        to="/profile" 
+                                                        className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
+                                                        onClick={() => setOpenMenu(null)}
+                                                    >
+                                                        <RiUserLine size={16} />
+                                                        Profile
+                                                    </Link>
+                                                </li>
+                                                <li role="menuitem">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            handleLogout();
+                                                            setOpenMenu(null);
+                                                        }}
+                                                        className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
+                                                    >
+                                                        <RiLogoutBoxLine size={16} />
+                                                        Logout
+                                                    </button>
+                                                </li>
+                                            </ul>
+                                        </Dropdown>
                                     </div>
                                 </div>
             ) : (
@@ -181,18 +213,20 @@ export const Navbar = () => {
                 </span>
                 <div className="flex mt-3 space-x-2">
                     <Link to="/profile" onClick={() => setSidebarOpen(false)}>
-            <button type="button" className="px-3 py-1 text-sm text-blue-800 border border-blue-800 rounded-lg">
+            <button type="button" className="flex items-center gap-1 px-3 py-1 text-sm text-blue-800 border border-blue-800 rounded-lg">
+                        <RiUserLine size={14} />
                         Profile
                     </button>
                     </Link>
             <button 
             type="button"
-            className="px-3 py-1 text-sm text-white bg-blue-500 rounded-lg"
+            className="flex items-center gap-1 px-3 py-1 text-sm text-white bg-blue-500 rounded-lg"
                     onClick={() => {
                         handleLogout();
                         setSidebarOpen(false);
                     }}
                     >
+                    <RiLogoutBoxLine size={14} />
                     Logout
                     </button>
                 </div>

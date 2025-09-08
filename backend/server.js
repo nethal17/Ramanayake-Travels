@@ -8,6 +8,7 @@ import authRoutes from "./routes/user.route.js";
 import vehicleRoutes from './routes/vehicle.route.js';
 import profileRoutes from './routes/profile.route.js';
 import adminRoutes from './routes/admin.route.js';
+import driverRoutes from './routes/driver.route.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -42,6 +43,7 @@ app.use("/api/auth", authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api', adminRoutes);
+app.use('/api/drivers', driverRoutes);
 
 app.listen(PORT, () => {
 	console.log("Server is running on http://localhost:" + PORT);

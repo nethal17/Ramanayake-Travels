@@ -21,6 +21,8 @@ import AdminVehicleApplications from './components/AdminVehicleApplications';
 import AdminVehiclesList from './pages/AdminVehiclesList';
 import AdminVehicleRegister from './pages/AdminVehicleRegister';
 import CompanyVehicleRegister from './pages/CompanyVehicleRegister';
+import AddDriverPage from './pages/AddDriverPage';
+import DriverListPage from './pages/DriverListPage';
 
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -49,6 +51,8 @@ function App() {
           <Route path="vehicles-list" element={<AdminVehiclesList />} />
           <Route path="vehicle-register" element={<AdminVehicleRegister />} />
           <Route path="company-vehicle-register" element={<CompanyVehicleRegister />} />
+          <Route path="add-driver" element={<AddDriverPage />} />
+          <Route path="driver-list" element={<DriverListPage />} />
           {/* Add more admin routes as needed */}
         </Route>
         
