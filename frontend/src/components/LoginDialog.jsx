@@ -38,9 +38,8 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
         { withCredentials: true }
       );
 
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+      if (data?.accessToken) {
+        localStorage.setItem("token", data.accessToken);
         window.dispatchEvent(new Event("auth-changed"));
         toast.success("Logged in");
         onClose?.();
@@ -129,7 +128,7 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
 
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-900/70 pb-2">
-                <a className="hover:underline" href="#">Forgot password?</a>
+                <a className="hover:underline" href="/forgot-password">Forgot password?</a>
               </div>
             </div>
 
