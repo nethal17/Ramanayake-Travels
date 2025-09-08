@@ -4,9 +4,12 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
 
-
 const generateRefreshToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
+};
+
+const generateAccessToken = (userId) => {
+    return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
 export const blacklistedTokens = new Set();
@@ -205,8 +208,9 @@ export const loginUser = async (req, res) => {
             });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const accessToken = generateAccessToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
+
         user.refreshToken = refreshToken;
         await user.save();
 
@@ -220,9 +224,19 @@ export const loginUser = async (req, res) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
+        // Set access token as HTTP-only cookie
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            // Lax is friendlier for local dev (different ports). Use 'none' with secure in prod if cross-site.
+            sameSite: "lax",
+            path: "/",
+            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 days
+        });
+
         // Send complete user data in response
         res.json({ 
-            token, 
+            accessToken, 
             user: { 
                 _id: user._id,
                 name: user.name, 
@@ -235,13 +249,14 @@ export const loginUser = async (req, res) => {
                 createdAt: user.createdAt
             } 
         });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ msg: "Server Error", error: err.message });
     }
 };
 
-export const logoutUser = async (req, res) => {
+/*export const logoutUser = async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     const refreshToken = req.cookies.refreshToken;
 
@@ -256,6 +271,7 @@ export const logoutUser = async (req, res) => {
 
     try {
         if (token) {
+            // Add access token to blacklist
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
             blacklistedTokens.add(token);
         }
@@ -286,7 +302,24 @@ export const logoutUser = async (req, res) => {
 
         res.status(500).json({ msg: "Server Error" });
     }
-};
+}; */
+
+export const logoutUser = async (req, res) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (refreshToken) {
+            const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            await User.findByIdAndUpdate(decoded.id, { $unset: { refreshToken: "" } });
+        }
+
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
+        localStorage.clear();
+        res.json({message: "Logged out successfully"});
+    } catch (error) {
+        res.status(500).json({message: "Server error", error: error.message});
+    }
+}  
 
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
@@ -770,7 +803,7 @@ export const refreshAccessToken = async (req, res) => {
         if (!user || user.refreshToken !== refreshToken) {
             return res.status(403).json({ msg: "Invalid refresh token" });
         }
-        const newAccessToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const newAccessToken = generateAccessToken(user._id);
         res.json({ token: newAccessToken });
     } catch (err) {
         return res.status(403).json({ msg: "Invalid or expired refresh token" });

@@ -21,6 +21,11 @@ import AdminVehicleApplications from './components/AdminVehicleApplications';
 import AdminVehiclesList from './pages/AdminVehiclesList';
 import AdminVehicleRegister from './pages/AdminVehicleRegister';
 import CompanyVehicleRegister from './pages/CompanyVehicleRegister';
+import Navbar from './components/Navbar';
+import HomePage from './pages/HomePage';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
 
 function App() {
   return (
@@ -50,6 +55,9 @@ function App() {
         
         {/* Fallback route */}
         <Route path="*" element={<Navigate replace to="/" />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Routes>
       <Toaster position="top-center" reverseOrder={false} />
     </>

@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
         enum: ["customer", "admin"],
         default: "customer"
     },
-    profilePic: { type: String, default: "https://i.pinimg.com/736x/0d/64/98/0d64989794b1a4c9d89bff571d3d5842.jpg" },
+    profilePic: { type: String, default: "https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_640.png" },
     resetPasswordToken: { 
         type: String 
     },
@@ -59,7 +59,8 @@ const userSchema = new mongoose.Schema({
         timestamp: { type: Date, default: Date.now },
     },
     refreshToken: {
-        type: String
+        type: String,
+        default: null
     }
 }, {
     timestamps: true
