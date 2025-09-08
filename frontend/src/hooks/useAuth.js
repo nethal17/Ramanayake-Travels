@@ -119,6 +119,22 @@ export function useAuth() {
       setIsAuthLoading(false);
     }
   }, [isAuthenticated, userId]);
+  
+  // Function to get auth headers for API requests
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
-  return { isAuthenticated, isAuthLoading, userId, user, userLoading, userError, refetchUser: fetchUser, logout };
+  return { 
+    isAuthenticated, 
+    isAuthLoading, 
+    userId, 
+    user, 
+    userLoading, 
+    userError, 
+    refetchUser: fetchUser, 
+    logout,
+    getAuthHeaders 
+  };
 }

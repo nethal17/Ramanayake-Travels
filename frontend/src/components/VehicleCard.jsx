@@ -8,11 +8,14 @@ import {
   FaSnowflake,
   FaWifi,
   FaStar,
-  FaImage
+  FaImage,
+  FaCalendarAlt,
+  FaInfoCircle
 } from "react-icons/fa";
 import backgroundImage from "../assets/image1.jpg";
+import { Link } from "react-router-dom";
 
-export const VehicleCard = ({ vehicle }) => {
+const VehicleCard = ({ vehicle }) => {
   // Handle undefined vehicle prop
   if (!vehicle) {
     return (
@@ -29,22 +32,36 @@ export const VehicleCard = ({ vehicle }) => {
 
   // Default values for missing properties
   const vehicleData = {
-    name: vehicle.name || "Unknown Vehicle",
-    type: vehicle.type || "Standard",
-    image: vehicle.image || null,
-    capacity: vehicle.capacity || 4,
-    hasAC: vehicle.hasAC !== undefined ? vehicle.hasAC : true,
-    hasWifi: vehicle.hasWifi !== undefined ? vehicle.hasWifi : false,
-    rating: vehicle.rating || 4.5,
-    price: vehicle.price || "Contact for price"
+    _id: vehicle._id || "unknown",
+    make: vehicle.make || "Unknown Make",
+    model: vehicle.model || "Unknown Model",
+    year: vehicle.year || "N/A",
+    price: vehicle.price || 0,
+    description: vehicle.description || "No description available",
+    imageUrl: vehicle.imageUrl || null,
+    ownership: vehicle.ownership || "Company",
+    status: vehicle.status || "available"
+  };
+
+  // Determine vehicle type based on make/model keywords
+  const getVehicleType = () => {
+    const combined = (vehicleData.make + ' ' + vehicleData.model).toLowerCase();
+    if (combined.includes('bus') || combined.includes('coach')) return 'bus';
+    if (combined.includes('van') || combined.includes('hiace')) return 'van';
+    return 'car';
   };
 
   // Choose icon based on vehicle type
   const getVehicleIcon = () => {
-    const name = vehicleData.name.toLowerCase();
-    if (name.includes("bus")) return <FaBusAlt className="w-5 h-5 text-blue-600" />;
-    if (name.includes("van")) return <FaShuttleVan className="w-5 h-5 text-blue-600" />;
+    const type = getVehicleType();
+    if (type === 'bus') return <FaBusAlt className="w-5 h-5 text-blue-600" />;
+    if (type === 'van') return <FaShuttleVan className="w-5 h-5 text-blue-600" />;
     return <FaCarSide className="w-5 h-5 text-blue-600" />;
+  };
+
+  // Format price with commas
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US').format(price);
   };
 
   return (
@@ -55,12 +72,12 @@ export const VehicleCard = ({ vehicle }) => {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Vehicle Image with Fallback - Using backgroundImage as fallback */}
+      {/* Vehicle Image with Fallback */}
       <div className="w-full h-40 bg-gradient-to-br from-blue-100 to-blue-200 rounded-md mb-4 flex items-center justify-center overflow-hidden relative">
-        {vehicleData.image ? (
+        {vehicleData.imageUrl ? (
           <img
-            src={vehicleData.image}
-            alt={vehicleData.name}
+            src={vehicleData.imageUrl}
+            alt={`${vehicleData.make} ${vehicleData.model}`}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.style.display = 'none';
@@ -86,10 +103,12 @@ export const VehicleCard = ({ vehicle }) => {
           </div>
         )}
         
-        {/* Rating Badge */}
-        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 text-xs font-semibold">
-          <FaStar className="text-yellow-400" />
-          <span>{vehicleData.rating}</span>
+        {/* Ownership Badge */}
+        <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1 text-xs font-semibold">
+          {vehicleData.ownership === 'Company' ? 
+            <span className="text-blue-600">Company</span> : 
+            <span className="text-green-600">Customer</span>
+          }
         </div>
       </div>
 
@@ -97,47 +116,34 @@ export const VehicleCard = ({ vehicle }) => {
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
           {getVehicleIcon()}
-          <h3 className="text-lg font-semibold text-gray-900">{vehicleData.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{vehicleData.make} {vehicleData.model}</h3>
         </div>
-        <p className="text-gray-600 text-sm">{vehicleData.type}</p>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <FaCalendarAlt />
+          <span>{vehicleData.year}</span>
+        </div>
       </div>
 
-      {/* Features */}
-      <div className="flex items-center gap-3 mb-3 text-xs text-gray-500">
-        <div className="flex items-center gap-1">
-          <FaUsers className="w-3 h-3" />
-          <span>{vehicleData.capacity} seats</span>
-        </div>
-        {vehicleData.hasAC && (
-          <div className="flex items-center gap-1">
-            <FaSnowflake className="w-3 h-3" />
-            <span>AC</span>
-          </div>
-        )}
-        {vehicleData.hasWifi && (
-          <div className="flex items-center gap-1">
-            <FaWifi className="w-3 h-3" />
-            <span>WiFi</span>
-          </div>
-        )}
-      </div>
+      {/* Description - Truncated */}
+      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+        {vehicleData.description}
+      </p>
 
-      {/* Price and Action */}
+      {/* Price and Action Button */}
       <div className="flex items-center justify-between">
-        <span className="text-lg font-bold text-blue-600">{vehicleData.price}</span>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        <div className="font-bold text-blue-600">
+          Rs {formatPrice(vehicleData.price)}<span className="text-sm font-normal">/day</span>
+        </div>
+        <Link 
+          to={`/fleet/vehicles/${vehicleData._id}`}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1"
         >
-          Book Now
-        </motion.button>
+          <FaInfoCircle />
+          <span>Details</span>
+        </Link>
       </div>
     </motion.div>
   );
 };
 
-// Default props for safety
-VehicleCard.defaultProps = {
-  vehicle: null
-};
+export default VehicleCard;
