@@ -47,9 +47,8 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
         { withCredentials: true }
       );
 
-      if (data?.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+      if (data?.accessToken) {
+        localStorage.setItem("token", data.accessToken);
         window.dispatchEvent(new Event("auth-changed"));
         toast.success("Logged in successfully!");
         onClose?.();
@@ -119,81 +118,49 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
               </p>
             </div>
 
-            {/* Body */}
-            <div className="px-8 pb-8 pt-4">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Email Field */}
-                <motion.div 
-                  className="relative"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-900">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiMailLine className="h-5 w-5 text-gray-900/50" />
-                    </div>
-                    <input
-                      id="email"
-                      ref={firstFieldRef}
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-gray-900/20 pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                </motion.div>
+        {/* Body */}
+        <div className="px-6 pb-6">
+          <p className="mb-10 text-sm text-gray-900/50">
+            Sign in to continue to Ramanayake Travels
+          </p>
 
-                {/* Password Field */}
-                <motion.div 
-                  className="relative"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-900">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiLockLine className="h-5 w-5 text-gray-900/50" />
-                    </div>
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-gray-900/20 pl-10 pr-12 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="••••••••"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <RiEyeOffLine className="h-5 w-5 text-gray-900/50 hover:text-gray-900 transition-colors" />
-                      ) : (
-                        <RiEyeLine className="h-5 w-5 text-gray-900/50 hover:text-gray-900 transition-colors" />
-                      )}
-                    </button>
-                  </div>
-                  <div className="mt-2 text-right">
-                    <motion.a 
-                      className="text-sm text-blue-500 hover:text-blue-600 hover:underline transition-colors"
-                      href="#"
-                      whileHover={{ x: 2 }}
-                    >
-                      Forgot password?
-                    </motion.a>
-                  </div>
-                </motion.div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-900">
+                Email
+              </label>
+              <input
+                id="email"
+                ref={firstFieldRef}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-500 outline-none ring-blue-500 transition focus:border-blue-500 focus:ring-1"
+                placeholder="you@example.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-900">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 placeholder-gray-500 outline-none ring-blue-500 transition focus:border-blue-500 focus:ring-1"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-900/70 pb-2">
+                <a className="hover:underline" href="/forgot-password">Forgot password?</a>
+              </div>
+            </div>
 
                 {/* Submit Button */}
                 <motion.div
