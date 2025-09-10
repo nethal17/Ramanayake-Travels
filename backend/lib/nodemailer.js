@@ -29,4 +29,23 @@ const defaultMailOptions = {
 	from: process.env.EMAIL_USER
 };
 
+// Send email function
+export const sendEmail = async (options) => {
+	const mailOptions = {
+		...defaultMailOptions,
+		to: options.to,
+		subject: options.subject,
+		html: options.html || options.text
+	};
+	
+	try {
+		const info = await transporter.sendMail(mailOptions);
+		console.log('Email sent:', info.messageId);
+		return info;
+	} catch (error) {
+		console.error('Error sending email:', error);
+		throw error;
+	}
+};
+
 export { transporter, defaultMailOptions };

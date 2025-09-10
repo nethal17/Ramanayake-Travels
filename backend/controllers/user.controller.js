@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
+import { sendPasswordAfterVerification } from "./driver.controller.js";
 
 const generateRefreshToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
@@ -90,6 +91,11 @@ export const verifyEmail = async (req, res) => {
         user.isVerified = true;
         user.verificationToken = undefined;
         await user.save();
+
+        // If user is a driver, send password via email
+        if (user.role === 'driver') {
+            await sendPasswordAfterVerification(user._id);
+        }
 
         // Redirect to the success page
         res.redirect('http://localhost:5173/email-verification-success');

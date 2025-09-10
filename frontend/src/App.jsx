@@ -2,7 +2,10 @@ import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 32309e90c850c42f3aa573ea80d4d0d659c13930
 // Layouts
 import CustomerLayout from './layouts/CustomerLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -26,6 +29,9 @@ import CompanyVehicleRegister from './pages/CompanyVehicleRegister';
 import AdminReservations from './pages/AdminReservations';
 
 import HomePage from './pages/HomePage';
+import AddDriverPage from './pages/AddDriverPage';
+import DriverListPage from './pages/DriverListPage';
+
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
@@ -54,7 +60,12 @@ function App() {
           <Route path="vehicles-list" element={<AdminVehiclesList />} />
           <Route path="vehicle-register" element={<AdminVehicleRegister />} />
           <Route path="company-vehicle-register" element={<CompanyVehicleRegister />} />
+<<<<<<< HEAD
           <Route path="reservations" element={<AdminReservations />} />
+=======
+          <Route path="add-driver" element={<AddDriverPage />} />
+          <Route path="driver-list" element={<DriverListPage />} />
+>>>>>>> 32309e90c850c42f3aa573ea80d4d0d659c13930
           {/* Add more admin routes as needed */}
         </Route>
         
