@@ -8,6 +8,7 @@ import authRoutes from "./routes/user.route.js";
 import vehicleRoutes from './routes/vehicle.route.js';
 import profileRoutes from './routes/profile.route.js';
 import adminRoutes from './routes/admin.route.js';
+import reservationRoutes from './routes/reservation.route.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -34,6 +35,13 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Debug middleware to log request headers
+app.use((req, res, next) => {
+  console.log('Request URL:', req.url);
+  console.log('Authorization header:', req.headers.authorization);
+  next();
+});
+
 // Serve uploads statically
 app.use('/uploads', express.static(uploadsDir));
 
@@ -41,6 +49,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.use("/api/auth", authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/reservations', reservationRoutes);
 app.use('/api', adminRoutes);
 
 app.listen(PORT, () => {

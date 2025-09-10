@@ -10,6 +10,7 @@ import {
   FaMapMarkerAlt, 
   FaCheckCircle 
 } from 'react-icons/fa';
+import ReservationForm from '../components/ReservationForm';
 
 const VehicleDetailsPage = () => {
   const { id } = useParams();
@@ -159,11 +160,7 @@ const VehicleDetailsPage = () => {
           {/* Book Now Button */}
           {vehicle.status === 'available' && (
             <div className="mt-8">
-              <button 
-                className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Book Now
-              </button>
+              <ReservationForm vehicle={vehicle} />
             </div>
           )}
         </div>

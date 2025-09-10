@@ -32,16 +32,18 @@ export function useAuth() {
       }
 
       try {
-        const { data } = await axios.post(
-          'http://localhost:5001/api/auth/refresh-token',
+        const response = await axios.post(
+          '/api/auth/refresh-token',
           {},
-          { withCredentials: true }
+          { 
+            withCredentials: true 
+          }
         );
-        if (data?.token && isValid(data.token)) {
-          localStorage.setItem('token', data.token);
+        if (response.data?.token && isValid(response.data.token)) {
+          localStorage.setItem('token', response.data.token);
           setIsAuthenticated(true);
           try {
-            const decoded = jwtDecode(data.token);
+            const decoded = jwtDecode(response.data.token);
             setUserId(decoded?.id);
           } catch {}
           return;
@@ -70,11 +72,14 @@ export function useAuth() {
     setUserError(null);
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.get(
-        `http://localhost:5001/api/auth/searchUser/${userId}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {}, withCredentials: true }
+      const response = await axios.get(
+        `/api/auth/searchUser/${userId}`,
+        { 
+          headers: token ? { Authorization: `Bearer ${token}` } : {}, 
+          withCredentials: true 
+        }
       );
-      setUser(data);
+      setUser(response.data);
     } catch (err) {
       setUserError(err);
     } finally {
@@ -94,7 +99,7 @@ export function useAuth() {
     const token = localStorage.getItem('token');
     try {
       await axios.post(
-        'http://localhost:5001/api/auth/logout',
+        '/api/auth/logout',
         {},
         {
           withCredentials: true,
@@ -121,7 +126,7 @@ export function useAuth() {
   }, [isAuthenticated, userId]);
   
   // Function to get auth headers for API requests
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (isMultipart = false) => {
     const token = localStorage.getItem('token');
     return token ? { Authorization: `Bearer ${token}` } : {};
   };

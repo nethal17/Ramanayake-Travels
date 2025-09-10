@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaTimes, FaCalendarAlt, FaMoneyBillWave, FaUser, FaCheckCircle, FaCarSide } from 'react-icons/fa';
+import { FaTimes, FaCalendarAlt, FaMoneyBillWave, FaUser, FaCheckCircle, FaCarSide, FaGasPump, FaCog, FaUsers, FaDoorOpen } from 'react-icons/fa';
 
 const VehicleDetailsModal = ({ vehicle, onClose }) => {
   if (!vehicle) return null;
@@ -44,7 +44,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                 <div className="flex items-center space-x-2">
                   <FaMoneyBillWave className="text-green-600" />
                   <span className="text-gray-700">
-                    <span className="font-semibold">Price:</span> Rs. {vehicle.price.toLocaleString()} / day
+                    <span className="font-semibold">Price:</span> Rs. {vehicle.price?.toLocaleString()} / day
                   </span>
                 </div>
                 
@@ -52,6 +52,34 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                   <FaCalendarAlt className="text-blue-600" />
                   <span className="text-gray-700">
                     <span className="font-semibold">Year:</span> {vehicle.year}
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <FaGasPump className="text-red-600" />
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Fuel:</span> {vehicle.fuelType || 'Not specified'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <FaCog className="text-gray-600" />
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Transmission:</span> {vehicle.transmission || 'Not specified'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <FaUsers className="text-indigo-600" />
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Seats:</span> {vehicle.seats || 'Not specified'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <FaDoorOpen className="text-amber-600" />
+                  <span className="text-gray-700">
+                    <span className="font-semibold">Doors:</span> {vehicle.doors || 'Not specified'}
                   </span>
                 </div>
                 
@@ -73,6 +101,20 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                   </span>
                 </div>
               </div>
+              
+              {/* Extra Options */}
+              {vehicle.extraOptions && vehicle.extraOptions.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-800 mb-2">Extra Options</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {vehicle.extraOptions.map((option, index) => (
+                      <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">
+                        {option}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-800 mb-2">Description</h4>

@@ -11,15 +11,15 @@ export async function isAuthenticated(req, res, next) {
     
     // Check for Bearer token in Authorization header
     const authHeader = req.headers.authorization;
+    console.log('Auth header:', authHeader);
+    
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
-      console.log('Using token from Authorization header');
+      console.log('Using token from Authorization header:', token.substring(0, 10) + '...');
     }
     
-    // Log token status (without revealing the actual token)
     console.log('Token present:', !!token);
     
-    // If no token, return unauthorized
     if (!token) {
       return res.status(401).json({ message: "Unauthorized - No access token provided" });
     }

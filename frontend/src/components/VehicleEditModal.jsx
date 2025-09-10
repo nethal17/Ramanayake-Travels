@@ -9,7 +9,12 @@ const VehicleEditModal = ({ vehicle, onClose, onSave, isSaving }) => {
     price: '',
     description: '',
     imageUrl: '',
-    status: 'available'
+    status: 'available',
+    fuelType: 'Petrol',
+    transmission: 'Manual',
+    seats: 5,
+    doors: 4,
+    extraOptions: []
   });
 
   useEffect(() => {
@@ -21,17 +26,39 @@ const VehicleEditModal = ({ vehicle, onClose, onSave, isSaving }) => {
         price: vehicle.price || '',
         description: vehicle.description || '',
         imageUrl: vehicle.imageUrl || '',
-        status: vehicle.status || 'available'
+        status: vehicle.status || 'available',
+        fuelType: vehicle.fuelType || 'Petrol',
+        transmission: vehicle.transmission || 'Manual',
+        seats: vehicle.seats || 5,
+        doors: vehicle.doors || 4,
+        extraOptions: vehicle.extraOptions || []
       });
     }
   }, [vehicle]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, type, checked } = e.target;
+    
+    if (name === 'extraOptions' && type === 'checkbox') {
+      // Handle checkboxes for extraOptions array
+      if (checked) {
+        setFormData(prev => ({
+          ...prev,
+          extraOptions: [...prev.extraOptions, value]
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          extraOptions: prev.extraOptions.filter(option => option !== value)
+        }));
+      }
+    } else {
+      // Handle regular inputs
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -113,6 +140,70 @@ const VehicleEditModal = ({ vehicle, onClose, onSave, isSaving }) => {
               </div>
               
               <div>
+                <label htmlFor="fuelType" className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
+                <select
+                  id="fuelType"
+                  name="fuelType"
+                  value={formData.fuelType}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Electric">Electric</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="transmission" className="block text-sm font-medium text-gray-700 mb-1">Transmission</label>
+                <select
+                  id="transmission"
+                  name="transmission"
+                  value={formData.transmission}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="Manual">Manual</option>
+                  <option value="Automatic">Automatic</option>
+                  <option value="Semi-Automatic">Semi-Automatic</option>
+                </select>
+              </div>
+              
+              <div>
+                <label htmlFor="seats" className="block text-sm font-medium text-gray-700 mb-1">Number of Seats</label>
+                <input
+                  type="number"
+                  id="seats"
+                  name="seats"
+                  min="1"
+                  max="50"
+                  value={formData.seats}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="doors" className="block text-sm font-medium text-gray-700 mb-1">Number of Doors</label>
+                <input
+                  type="number"
+                  id="doors"
+                  name="doors"
+                  min="1"
+                  max="6"
+                  value={formData.doors}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
                 <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
                 <input
                   type="url"
@@ -140,6 +231,84 @@ const VehicleEditModal = ({ vehicle, onClose, onSave, isSaving }) => {
                   <option value="maintenance">Maintenance</option>
                   <option value="unavailable">Unavailable</option>
                 </select>
+              </div>
+            </div>
+            
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Extra Options</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="ac"
+                    name="extraOptions"
+                    value="Air Conditioning"
+                    checked={formData.extraOptions.includes('Air Conditioning')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="ac" className="ml-2 block text-sm text-gray-700">Air Conditioning</label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="gps"
+                    name="extraOptions"
+                    value="GPS"
+                    checked={formData.extraOptions.includes('GPS')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="gps" className="ml-2 block text-sm text-gray-700">GPS</label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="bluetooth"
+                    name="extraOptions"
+                    value="Bluetooth"
+                    checked={formData.extraOptions.includes('Bluetooth')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="bluetooth" className="ml-2 block text-sm text-gray-700">Bluetooth</label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="leather"
+                    name="extraOptions"
+                    value="Leather Seats"
+                    checked={formData.extraOptions.includes('Leather Seats')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="leather" className="ml-2 block text-sm text-gray-700">Leather Seats</label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="sunroof"
+                    name="extraOptions"
+                    value="Sunroof"
+                    checked={formData.extraOptions.includes('Sunroof')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="sunroof" className="ml-2 block text-sm text-gray-700">Sunroof</label>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="childSeats"
+                    name="extraOptions"
+                    value="Child Seats"
+                    checked={formData.extraOptions.includes('Child Seats')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="childSeats" className="ml-2 block text-sm text-gray-700">Child Seats</label>
+                </div>
               </div>
             </div>
             

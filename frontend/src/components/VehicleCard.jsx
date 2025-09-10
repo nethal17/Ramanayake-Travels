@@ -5,12 +5,13 @@ import {
   FaShuttleVan, 
   FaCarSide, 
   FaUsers,
-  FaSnowflake,
-  FaWifi,
+  FaGasPump,
+  FaCog,
   FaStar,
   FaImage,
   FaCalendarAlt,
-  FaInfoCircle
+  FaInfoCircle,
+  FaDoorOpen
 } from "react-icons/fa";
 import backgroundImage from "../assets/image1.jpg";
 import { Link } from "react-router-dom";
@@ -40,7 +41,12 @@ const VehicleCard = ({ vehicle }) => {
     description: vehicle.description || "No description available",
     imageUrl: vehicle.imageUrl || null,
     ownership: vehicle.ownership || "Company",
-    status: vehicle.status || "available"
+    status: vehicle.status || "available",
+    fuelType: vehicle.fuelType || "Petrol",
+    transmission: vehicle.transmission || "Manual",
+    seats: vehicle.seats || 5,
+    doors: vehicle.doors || 4,
+    extraOptions: vehicle.extraOptions || []
   };
 
   // Determine vehicle type based on make/model keywords
@@ -118,9 +124,29 @@ const VehicleCard = ({ vehicle }) => {
           {getVehicleIcon()}
           <h3 className="text-lg font-semibold text-gray-900">{vehicleData.make} {vehicleData.model}</h3>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <FaCalendarAlt />
-          <span>{vehicleData.year}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600 mb-1">
+          <div className="flex items-center gap-1">
+            <FaCalendarAlt />
+            <span>{vehicleData.year}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FaGasPump />
+            <span>{vehicleData.fuelType}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FaCog />
+            <span>{vehicleData.transmission}</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
+          <div className="flex items-center gap-1">
+            <FaUsers />
+            <span>{vehicleData.seats} seats</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <FaDoorOpen />
+            <span>{vehicleData.doors} doors</span>
+          </div>
         </div>
       </div>
 

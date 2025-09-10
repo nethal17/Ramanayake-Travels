@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import VehicleCard from '../components/VehicleCard';
 import VehicleSearchBar from '../components/VehicleSearchBar';
+import { FaCar, FaShuttleVan, FaBusAlt, FaFilter } from 'react-icons/fa';
 
 const FleetPage = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -12,8 +13,13 @@ const FleetPage = () => {
     model: '',
     minPrice: '',
     maxPrice: '',
-    year: ''
+    year: '',
+    fuelType: '',
+    transmission: '',
+    minSeats: '',
+    maxDoors: ''
   });
+  const [activeCategory, setActiveCategory] = useState('all');
 
   useEffect(() => {
     fetchVehicles();
@@ -22,7 +28,7 @@ const FleetPage = () => {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5001/api/vehicles');
+      const response = await axios.get('http://localhost:5001/api/vehicles/search');
       setVehicles(response.data);
       setLoading(false);
     } catch (err) {
@@ -43,7 +49,7 @@ const FleetPage = () => {
         if (value) queryParams.append(key, value);
       });
       
-      const response = await axios.get(`http://localhost:5001/api/vehicles?${queryParams}`);
+      const response = await axios.get(`http://localhost:5001/api/vehicles/search?${queryParams}`);
       setVehicles(response.data);
       setLoading(false);
     } catch (err) {
@@ -59,14 +65,98 @@ const FleetPage = () => {
       model: '',
       minPrice: '',
       maxPrice: '',
-      year: ''
+      year: '',
+      fuelType: '',
+      transmission: '',
+      minSeats: '',
+      maxDoors: ''
     });
+    setActiveCategory('all');
     fetchVehicles();
+  };
+  
+  // Filter vehicles by type (car, van, bus)
+  const filterByType = (type) => {
+    setActiveCategory(type);
+    
+    if (type === 'all') {
+      fetchVehicles();
+      return;
+    }
+    
+    // Filter vehicles locally based on type
+    setLoading(true);
+    
+    const filteredVehicles = vehicles.filter(vehicle => {
+      const combined = (vehicle.make + ' ' + vehicle.model).toLowerCase();
+      
+      if (type === 'car' && !combined.includes('bus') && !combined.includes('van') && 
+          !combined.includes('coach') && !combined.includes('hiace')) {
+        return true;
+      }
+      
+      if (type === 'van' && (combined.includes('van') || combined.includes('hiace'))) {
+        return true;
+      }
+      
+      if (type === 'bus' && (combined.includes('bus') || combined.includes('coach'))) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    setVehicles(filteredVehicles);
+    setLoading(false);
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-center mb-8">Our Fleet</h1>
+      
+      {/* Vehicle type categories */}
+      <div className="flex flex-wrap justify-center gap-4 mb-8">
+        <button
+          onClick={() => filterByType('all')}
+          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
+            activeCategory === 'all' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <FaFilter /> All Vehicles
+        </button>
+        <button
+          onClick={() => filterByType('car')}
+          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
+            activeCategory === 'car' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <FaCar /> Cars
+        </button>
+        <button
+          onClick={() => filterByType('van')}
+          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
+            activeCategory === 'van' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <FaShuttleVan /> Vans
+        </button>
+        <button
+          onClick={() => filterByType('bus')}
+          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
+            activeCategory === 'bus' 
+              ? 'bg-blue-600 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          <FaBusAlt /> Buses
+        </button>
+      </div>
       
       <div className="mb-8">
         <VehicleSearchBar 

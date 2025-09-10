@@ -51,6 +51,7 @@ export const AdminNavbar = () => {
       isDropdown: true,
       children: [
         { label: 'Vehicle List', icon: RiFileList3Line, path: '/admin/vehicles-list' },
+        { label: 'Vehicle Applications', icon: RiFileList3Line, path: '/admin/vehicle-applications' },
         { label: 'Customer Vehicle', icon: RiCarWashingLine, path: '/admin/vehicle-register' },
         { label: 'Company Vehicle', icon: RiCarWashingLine, path: '/admin/company-vehicle-register' },
       ]

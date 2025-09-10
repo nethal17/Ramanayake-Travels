@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaCar, FaFilter, FaMoneyBillWave, FaCalendarAlt } from 'react-icons/fa';
+import { 
+  FaSearch, 
+  FaCar, 
+  FaFilter, 
+  FaMoneyBillWave, 
+  FaCalendarAlt, 
+  FaGasPump, 
+  FaUsers, 
+  FaDoorOpen, 
+  FaCogs 
+} from 'react-icons/fa';
 
 const SearchBar = ({ onSearch, onReset, initialFilters = {} }) => {
   const [filters, setFilters] = useState({
@@ -8,6 +18,10 @@ const SearchBar = ({ onSearch, onReset, initialFilters = {} }) => {
     minPrice: '',
     maxPrice: '',
     year: '',
+    fuelType: '',
+    transmission: '',
+    minSeats: '',
+    maxDoors: '',
     ...initialFilters
   });
 
@@ -33,7 +47,11 @@ const SearchBar = ({ onSearch, onReset, initialFilters = {} }) => {
       model: '',
       minPrice: '',
       maxPrice: '',
-      year: ''
+      year: '',
+      fuelType: '',
+      transmission: '',
+      minSeats: '',
+      maxDoors: ''
     });
     onReset();
   };
@@ -153,6 +171,60 @@ const SearchBar = ({ onSearch, onReset, initialFilters = {} }) => {
                 value={filters.maxPrice}
                 onChange={handleChange}
                 placeholder="No maximum"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            
+            {/* Fuel Type dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <FaGasPump className="inline mr-2" /> Fuel Type
+              </label>
+              <select
+                name="fuelType"
+                value={filters.fuelType}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Any Fuel Type</option>
+                <option value="Petrol">Petrol</option>
+                <option value="Diesel">Diesel</option>
+                <option value="Electric">Electric</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            {/* Transmission dropdown */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <FaCogs className="inline mr-2" /> Transmission
+              </label>
+              <select
+                name="transmission"
+                value={filters.transmission}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Any Transmission</option>
+                <option value="Manual">Manual</option>
+                <option value="Automatic">Automatic</option>
+                <option value="Semi-Automatic">Semi-Automatic</option>
+              </select>
+            </div>
+            
+            {/* Min Seats input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <FaUsers className="inline mr-2" /> Min Seats
+              </label>
+              <input
+                type="number"
+                name="minSeats"
+                value={filters.minSeats}
+                onChange={handleChange}
+                placeholder="Any number"
+                min="1"
                 className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               />
             </div>

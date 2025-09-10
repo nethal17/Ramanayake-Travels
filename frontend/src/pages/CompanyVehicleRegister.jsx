@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AdminNavbar } from '../components/AdminNavbar';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaCar, FaGasPump, FaChair, FaDoorOpen, FaCogs } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,16 +17,42 @@ const CompanyVehicleRegister = () => {
     price: '',
     description: '',
     imageUrl: '',
+    fuelType: 'Petrol',
+    seats: 5,
+    doors: 4,
+    transmission: 'Manual',
+    extraOptions: [],
     ownership: 'Company', // Set to Company by default
     status: 'available'
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, type, checked } = e.target;
+    
+    if (name === 'extraOptions') {
+      // Handle checkboxes for extraOptions
+      const updatedOptions = [...formData.extraOptions];
+      
+      if (checked) {
+        updatedOptions.push(value);
+      } else {
+        const index = updatedOptions.indexOf(value);
+        if (index > -1) {
+          updatedOptions.splice(index, 1);
+        }
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        extraOptions: updatedOptions
+      }));
+    } else {
+      // Handle other inputs
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -137,6 +163,78 @@ const CompanyVehicleRegister = () => {
                 </div>
                 
                 <div>
+                  <label htmlFor="fuelType" className="block text-sm font-medium text-gray-700">
+                    <FaGasPump className="inline mr-1" /> Fuel Type
+                  </label>
+                  <select
+                    id="fuelType"
+                    name="fuelType"
+                    value={formData.fuelType}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Petrol">Petrol</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="seats" className="block text-sm font-medium text-gray-700">
+                    <FaChair className="inline mr-1" /> Number of Seats
+                  </label>
+                  <input
+                    type="number"
+                    id="seats"
+                    name="seats"
+                    min="1"
+                    max="50"
+                    value={formData.seats}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="doors" className="block text-sm font-medium text-gray-700">
+                    <FaDoorOpen className="inline mr-1" /> Number of Doors
+                  </label>
+                  <input
+                    type="number"
+                    id="doors"
+                    name="doors"
+                    min="1"
+                    max="10"
+                    value={formData.doors}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="transmission" className="block text-sm font-medium text-gray-700">
+                    <FaCogs className="inline mr-1" /> Transmission
+                  </label>
+                  <select
+                    id="transmission"
+                    name="transmission"
+                    value={formData.transmission}
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Manual">Manual</option>
+                    <option value="Automatic">Automatic</option>
+                    <option value="Semi-Automatic">Semi-Automatic</option>
+                  </select>
+                </div>
+                
+                <div>
                   <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
                   <select
                     id="status"
@@ -164,6 +262,30 @@ const CompanyVehicleRegister = () => {
                   required
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FaCar className="inline mr-1" /> Extra Options
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {['Air Conditioning', 'GPS', 'Bluetooth', 'Leather Seats', 'Sunroof', 'Child Seats'].map(option => (
+                    <div key={option} className="flex items-center">
+                      <input
+                        id={`option-${option}`}
+                        name="extraOptions"
+                        type="checkbox"
+                        value={option}
+                        checked={formData.extraOptions.includes(option)}
+                        onChange={handleChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor={`option-${option}`} className="ml-2 block text-sm text-gray-700">
+                        {option}
+                      </label>
+                    </div>
+                  ))}
+                </div>
               </div>
               
               {/* Ownership field - hidden since it's always Company for this form */}

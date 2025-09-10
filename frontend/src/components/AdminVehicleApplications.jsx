@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RiCheckboxCircleLine, RiCloseCircleLine, RiEyeLine } from 'react-icons/ri';
-import axios from 'axios';
+import { 
+  RiCheckboxCircleLine, 
+  RiCloseCircleLine, 
+  RiEyeLine,
+  RiGasStationFill,
+  RiCarLine,
+  RiUserLine,
+  RiDoorLine
+} from 'react-icons/ri';
 import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 
@@ -18,53 +25,52 @@ const AdminVehicleApplications = () => {
     fetchVehicles();
   }, []);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      withCredentials: true
-    };
-  };
-
   const fetchVehicles = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Direct axios call to the backend API with auth headers
-      const response = await axios.get(
-        'http://localhost:5001/api/admin/vehicles',
-        getAuthHeaders()
-      );
-      setVehicles(response.data);
+      // Using fetch API instead of axios
+      const res = await fetch("/api/admin/vehicles", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to fetch: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      setVehicles(data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
       setError('Failed to load vehicle applications. Please try again later.');
       
-      // For demo purposes, use static data if API fails
-      setTimeout(() => {
-        const demoData = [
-          { _id: '1', make: 'Toyota', model: 'Corolla', year: 2020, price: 5000, owner: { name: 'John Doe', email: 'john@example.com' }, status: 'pending', createdAt: '2025-09-05T12:30:45Z', imageUrl: '', description: 'Well maintained sedan in excellent condition. Low mileage, regular service history.' },
-          { _id: '2', make: 'Honda', model: 'Civic', year: 2019, price: 4500, owner: { name: 'Jane Smith', email: 'jane@example.com' }, status: 'approved', createdAt: '2025-09-04T10:20:15Z', imageUrl: '', description: 'Fuel efficient and reliable compact car with modern features.' },
-          { _id: '3', make: 'Nissan', model: 'Sentra', year: 2021, price: 6000, owner: { name: 'Mike Johnson', email: 'mike@example.com' }, status: 'pending', createdAt: '2025-09-03T15:10:30Z', imageUrl: '', description: 'Perfect family car with spacious interior and safety features.' },
-          { _id: '4', make: 'Mazda', model: 'CX-5', year: 2022, price: 7500, owner: { name: 'Sarah Wilson', email: 'sarah@example.com' }, status: 'approved', createdAt: '2025-09-02T09:45:20Z', imageUrl: '', description: 'SUV with excellent handling and premium feel. Perfect for long trips.' },
-          { _id: '5', make: 'Kia', model: 'Forte', year: 2018, price: 3800, owner: { name: 'Robert Brown', email: 'robert@example.com' }, status: 'rejected', createdAt: '2025-09-01T14:25:10Z', imageUrl: '', description: 'Budget-friendly sedan with good fuel economy.' },
-          { _id: '6', make: 'Hyundai', model: 'Elantra', year: 2020, price: 4200, owner: { name: 'Emily Davis', email: 'emily@example.com' }, status: 'pending', createdAt: '2025-08-31T11:15:40Z', imageUrl: '', description: 'Sleek, modern design with all the latest tech features.' },
-        ];
-        setVehicles(demoData);
         setLoading(false);
-      }, 800);
     }
   };
 
   const handleApprove = async (id) => {
     try {
-      await axios.put(
-        `http://localhost:5001/api/admin/vehicles/${id}/approve`,
-        {},
-        getAuthHeaders()
-      );
-      toast.success('Vehicle application approved successfully');
+      const res = await fetch(`/api/admin/vehicles/${id}/approve`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to approve: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      toast.success(data.message || 'Vehicle application approved successfully');
       
       // Update local state after successful API call
       setVehicles(vehicles.map(v => 
@@ -78,11 +84,19 @@ const AdminVehicleApplications = () => {
 
   const handleReject = async (id) => {
     try {
-      await axios.put(
-        `http://localhost:5001/api/admin/vehicles/${id}/reject`,
-        {},
-        getAuthHeaders()
-      );
+      const res = await fetch(`/api/admin/vehicles/${id}/reject`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to reject: ${res.status}`);
+      }
+      
       toast.success('Vehicle application rejected successfully');
       
       // Update local state after successful API call
@@ -177,6 +191,7 @@ const AdminVehicleApplications = () => {
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Specs</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Day</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -204,6 +219,22 @@ const AdminVehicleApplications = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{vehicle.owner?.name || 'Unknown'}</div>
                     <div className="text-sm text-gray-500">{vehicle.owner?.email || 'No email'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center text-sm text-gray-700">
+                        <RiGasStationFill className="text-blue-500 mr-1" /> 
+                        {vehicle.fuelType || 'N/A'}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-700">
+                        <RiCarLine className="text-green-500 mr-1" /> 
+                        {vehicle.transmission || 'N/A'}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-700">
+                        <RiUserLine className="text-purple-500 mr-1" /> 
+                        {vehicle.seats || 'N/A'} seats
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">LKR {vehicle.price || 0}</div>
@@ -278,6 +309,55 @@ const AdminVehicleApplications = () => {
                   <div className="w-full md:w-32 font-medium text-gray-700">Price per day:</div>
                   <div className="flex-1 text-gray-900">LKR {selectedVehicle.price || 0}</div>
                 </div>
+                
+                {/* New Specifications Section */}
+                <div className="flex flex-col border-b pb-4">
+                  <div className="w-full font-medium text-gray-700 mb-2">Specifications:</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center">
+                      <RiGasStationFill className="text-blue-500 mr-2" />
+                      <div className="flex-1">
+                        <span className="text-gray-600 text-sm">Fuel Type:</span>
+                        <div className="text-gray-900">{selectedVehicle.fuelType || 'Not specified'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <RiCarLine className="text-green-500 mr-2" />
+                      <div className="flex-1">
+                        <span className="text-gray-600 text-sm">Transmission:</span>
+                        <div className="text-gray-900">{selectedVehicle.transmission || 'Not specified'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <RiUserLine className="text-purple-500 mr-2" />
+                      <div className="flex-1">
+                        <span className="text-gray-600 text-sm">Seats:</span>
+                        <div className="text-gray-900">{selectedVehicle.seats || 'Not specified'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <RiDoorLine className="text-amber-500 mr-2" />
+                      <div className="flex-1">
+                        <span className="text-gray-600 text-sm">Doors:</span>
+                        <div className="text-gray-900">{selectedVehicle.doors || 'Not specified'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Extra Options Section */}
+                {selectedVehicle.extraOptions && selectedVehicle.extraOptions.length > 0 && (
+                  <div className="flex flex-col border-b pb-4">
+                    <div className="w-full font-medium text-gray-700 mb-2">Extra Options:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedVehicle.extraOptions.map((option, index) => (
+                        <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-sm">
+                          {option}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex flex-col md:flex-row border-b pb-4">
                   <div className="w-full md:w-32 font-medium text-gray-700">Description:</div>

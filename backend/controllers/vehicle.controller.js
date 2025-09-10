@@ -5,7 +5,19 @@ import fs from 'fs';
 
 export async function registerVehicle(req, res) {
   try {
-    const { make, model, year, price, description, ownerId: explicitOwnerId } = req.body;
+    const { 
+      make, 
+      model, 
+      year, 
+      price, 
+      description, 
+      fuelType, 
+      seats, 
+      doors, 
+      transmission, 
+      extraOptions, 
+      ownerId: explicitOwnerId 
+    } = req.body;
     
     // Try to get owner ID from authenticated user or from request body
     let ownerId;
@@ -36,6 +48,11 @@ export async function registerVehicle(req, res) {
       price,
       description,
       imageUrl,
+      fuelType,
+      seats,
+      doors,
+      transmission,
+      extraOptions: Array.isArray(extraOptions) ? extraOptions : [extraOptions].filter(Boolean),
     });
     
     await vehicle.save();
@@ -105,6 +122,13 @@ export async function approveVehicleApplication(req, res) {
       price: application.price,
       description: application.description,
       imageUrl: application.imageUrl,
+      // Include new fields
+      fuelType: application.fuelType,
+      seats: application.seats,
+      doors: application.doors,
+      transmission: application.transmission,
+      extraOptions: application.extraOptions,
+      // Set ownership and IDs
       ownership: 'Customer',  // Set ownership to Customer
       ownerId: application.owner,  // Store the customer's ID directly from the application
       applicationId: application._id,  // Reference back to the original application
@@ -148,7 +172,22 @@ export async function rejectVehicleApplication(req, res) {
 
 export async function createVehicle(req, res) {
   try {
-    const { make, model, year, price, description, imageUrl, ownership, status, ownerId: explicitOwnerId } = req.body;
+    const { 
+      make, 
+      model, 
+      year, 
+      price, 
+      description, 
+      imageUrl, 
+      fuelType,
+      seats,
+      doors,
+      transmission,
+      extraOptions,
+      ownership, 
+      status, 
+      ownerId: explicitOwnerId 
+    } = req.body;
     
     // Try to get owner ID from authenticated user or from request body
     let ownerId;
@@ -171,6 +210,11 @@ export async function createVehicle(req, res) {
       price: Number(price),
       description,
       imageUrl,
+      fuelType,
+      seats: Number(seats),
+      doors: Number(doors),
+      transmission,
+      extraOptions: Array.isArray(extraOptions) ? extraOptions : [extraOptions].filter(Boolean),
       ownership: ownership || 'Company',
       ownerId,
       status: status || 'available'
@@ -282,7 +326,18 @@ export async function getAllAvailableVehicles(req, res) {
 // Search vehicles with filtering
 export async function searchVehicles(req, res) {
   try {
-    const { make, model, minPrice, maxPrice, year, ownership } = req.query;
+    const { 
+      make, 
+      model, 
+      minPrice, 
+      maxPrice, 
+      year, 
+      ownership,
+      fuelType,
+      transmission,
+      minSeats,
+      maxDoors
+    } = req.query;
     
     // Build the filter object
     const filter = { status: 'available' };
@@ -290,12 +345,18 @@ export async function searchVehicles(req, res) {
     if (model) filter.model = new RegExp(model, 'i');
     if (year) filter.year = year;
     if (ownership) filter.ownership = ownership;
+    if (fuelType) filter.fuelType = fuelType;
+    if (transmission) filter.transmission = transmission;
+    
+    // Numeric filters
+    if (minSeats) filter.seats = { $gte: Number(minSeats) };
+    if (maxDoors) filter.doors = { $lte: Number(maxDoors) };
     
     // Price range
     if (minPrice || maxPrice) {
       filter.price = {};
-      if (minPrice) filter.price.$gte = minPrice;
-      if (maxPrice) filter.price.$lte = maxPrice;
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
     }
     
     const vehicles = await Vehicle.find(filter)
