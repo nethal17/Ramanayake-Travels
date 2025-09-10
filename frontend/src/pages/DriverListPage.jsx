@@ -18,6 +18,7 @@ import {
 import { RxCheckCircled } from "react-icons/rx";
 import { useAuth } from '../hooks/useAuth';
 import UpdateDriverDialog from '../components/UpdateDriverDialog';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const DriverListPage = () => {
   const { getAuthHeaders } = useAuth();
@@ -158,12 +159,11 @@ const DriverListPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading drivers...</p>
-        </div>
-      </div>
+      <LoadingSpinner 
+        fullScreen={true}
+        size="lg"
+        message="Loading drivers..."
+      />
     );
   }
 

@@ -13,6 +13,7 @@ import {
   RiCalendarLine
 } from 'react-icons/ri';
 import { useAuth } from '../hooks/useAuth';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const AddDriverPage = () => {
   const navigate = useNavigate();
