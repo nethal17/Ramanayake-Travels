@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import VehicleDetailsModal from '../components/VehicleDetailsModal';
 import VehicleEditModal from '../components/VehicleEditModal';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const AdminVehiclesList = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -163,9 +164,11 @@ const AdminVehiclesList = () => {
             </div>
             
             {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <FaSpinner className="animate-spin text-blue-600 text-4xl" />
-              </div>
+              <LoadingSpinner 
+                size="md"
+                message="Loading vehicles..."
+                className="h-64"
+              />
             ) : filteredVehicles.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <p className="text-gray-500 text-lg">No vehicles found</p>

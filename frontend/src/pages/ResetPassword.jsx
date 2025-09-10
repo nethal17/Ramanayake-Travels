@@ -31,7 +31,7 @@ const ResetPassword = () => {
     }
 
     try {
-      await axios.post(`http://localhost:3000/api/auth/reset-password/${token}`, { password });
+      await axios.post(`http://localhost:5001/api/auth/reset-password/${token}`, { password });
       toast.success("Password successfully reset.");
       navigate("/login");
     } catch (error) {
@@ -43,17 +43,14 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-40 to-emerald-100">
-      <Navbar />
-      <Toaster position="top-center" reverseOrder={false} />
-      
+    <div className="bg-white mt-6">
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
         <div className="w-full max-w-md px-8 py-10 mx-4 bg-white rounded-3xl shadow-2xl backdrop-blur-sm border border-white/20">
           {/* Decorative top border */}
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-emerald-500 rounded-t-3xl"></div>
+          <div className="absolute top-0 left-0 w-full h-2 bg-blue-500 rounded-t-3xl"></div>
           
           <div className="mb-8 text-center">
-            <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">
+            <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-blue-500">
               Reset Password
             </h2>
             <p className="mt-2 text-gray-500">Create a new password for your account</p>
@@ -72,7 +69,7 @@ const ResetPassword = () => {
                   placeholder="Enter new password"
                   value={password}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
                 <svg
                   className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
@@ -97,7 +94,7 @@ const ResetPassword = () => {
                   placeholder="Confirm your new password"
                   value={confirmPassword}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
                 <svg
                   className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
@@ -115,8 +112,8 @@ const ResetPassword = () => {
               disabled={loading}
               className={`w-full py-3.5 px-4 text-lg font-medium text-white rounded-xl shadow-md transition-all duration-300 ${
                 loading 
-                  ? "bg-emerald-400 cursor-not-allowed"
-                  : "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 hover:shadow-lg transform hover:-translate-y-0.5"
+                  ? "bg-blue-500 cursor-not-allowed"
+                  : "bg-blue-500 hover:shadow-lg transform hover:-translate-y-0.5"
               }`}
             >
               {loading ? (
@@ -148,7 +145,7 @@ const ResetPassword = () => {
             <div className="mt-4 text-center">
               <a
                 href="/login"
-                className="inline-flex items-center text-sm font-medium text-emerald-600 hover:text-emerald-500 hover:underline"
+                className="inline-flex items-center text-sm font-medium text-blue-500 hover:text-blue-500 hover:underline"
               >
                 Back to Sign In
                 <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

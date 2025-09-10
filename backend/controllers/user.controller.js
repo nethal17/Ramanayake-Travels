@@ -358,7 +358,7 @@ export const forgotPassword = async (req, res) => {
                                 <tr>
                                     <td style="padding: 20px; text-align: center;">
                                         <p style="color: #34495e; margin-bottom: 20px;">Hello ${user.name},</p>
-                                        <p style="color: #34495e; margin-bottom: 20px;">We received a request to reset your password for your Agri-Waste Marketplace account. If you didn't make this request, you can safely ignore this email.</p>
+                                        <p style="color: #34495e; margin-bottom: 20px;">We received a request to reset your password for your Ramanayake Travels account. If you didn't make this request, you can safely ignore this email.</p>
                                         
                                         <table style="margin: 30px auto;">
                                             <tr>
