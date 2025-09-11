@@ -12,7 +12,9 @@ import {
   RiCarWashingLine,
   RiFileList3Line,
   RiSteering2Line,
-  RiAddCircleLine
+  RiAddCircleLine,
+  RiToolsLine,
+  RiSettings3Line
 } from 'react-icons/ri';
 import { Avatar } from './Avatar';
 import toast from 'react-hot-toast';
@@ -23,8 +25,12 @@ export const AdminNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [vehicleDropdownOpen, setVehicleDropdownOpen] = useState(false);
   const [driversDropdownOpen, setDriversDropdownOpen] = useState(false);
+  const [maintenanceDropdownOpen, setMaintenanceDropdownOpen] = useState(false);
+  const [techniciansDropdownOpen, setTechniciansDropdownOpen] = useState(false);
   const vehicleDropdownRef = useRef(null);
   const driversDropdownRef = useRef(null);
+  const maintenanceDropdownRef = useRef(null);
+  const techniciansDropdownRef = useRef(null);
   const fallbackAvatar = "https://i.pinimg.com/736x/0d/64/98/0d64989794b1a4c9d89bff571d3d5842.jpg";
 
   const handleLogout = async () => {
@@ -42,6 +48,12 @@ export const AdminNavbar = () => {
       if (driversDropdownRef.current && !driversDropdownRef.current.contains(event.target)) {
         setDriversDropdownOpen(false);
       }
+      if (maintenanceDropdownRef.current && !maintenanceDropdownRef.current.contains(event.target)) {
+        setMaintenanceDropdownOpen(false);
+      }
+      if (techniciansDropdownRef.current && !techniciansDropdownRef.current.contains(event.target)) {
+        setTechniciansDropdownOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -50,7 +62,7 @@ export const AdminNavbar = () => {
   }, [vehicleDropdownRef, driversDropdownRef]);
 
   const navItems = [
-    { label: 'Dashboard', icon: RiDashboard3Line, path: '/admin/dashboard' },
+    { label: 'Users', icon: RiUserLine, path: '/admin' },
     { label: 'Reservations', icon: RiCarLine, path: '/admin/reservations' },
     { 
       label: 'Vehicles', 
@@ -64,7 +76,26 @@ export const AdminNavbar = () => {
         { label: 'Company Vehicle', icon: RiCarWashingLine, path: '/admin/company-vehicle-register' },
       ]
     },
-    { label: 'Maintenance', icon: RiCarLine, path: '/admin/maintenance' },
+    { 
+      label: 'Maintenance', 
+      icon: RiToolsLine, 
+      isDropdown: true,
+      dropdownType: 'maintenance',
+      children: [
+        { label: 'Maintenance List', icon: RiFileList3Line, path: '/admin/maintenance-management' },
+        { label: 'Schedule Maintenance', icon: RiAddCircleLine, path: '/admin/maintenance-management/add' },
+      ]
+    },
+    { 
+      label: 'Technicians', 
+      icon: RiSettings3Line,
+      isDropdown: true,
+      dropdownType: 'technicians',
+      children: [
+        { label: 'Technician List', icon: RiFileList3Line, path: '/admin/technician-management' },
+        { label: 'Add Technician', icon: RiAddCircleLine, path: '/admin/technician-management/add' },
+      ]
+    },
     { 
       label: 'Drivers', 
       icon: RiSteering2Line,
@@ -81,53 +112,85 @@ export const AdminNavbar = () => {
     <>
       {/* Desktop Navbar */}
       <nav className="fixed top-0 w-full bg-gray-900 text-white shadow-lg z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div className="flex justify-between h-14">
             <div className="flex items-center">
-              <Link to="/admin/dashboard" className="flex items-center">
-                <span className="text-xl font-bold">Ramanayake<span className="text-blue-400">Admin</span></span>
+              <Link to="/admin" className="flex items-center">
+                <span className="text-lg font-bold">Ramanayake<span className="text-blue-400">Admin</span></span>
               </Link>
             </div>
             
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2">
               {navItems.map((item, index) => (
                 item.isDropdown ? (
-                  <div ref={item.dropdownType === 'vehicles' ? vehicleDropdownRef : driversDropdownRef} className="relative" key={index}>
+                  <div 
+                    ref={
+                      item.dropdownType === 'vehicles' 
+                        ? vehicleDropdownRef 
+                        : item.dropdownType === 'drivers' 
+                          ? driversDropdownRef 
+                          : item.dropdownType === 'maintenance'
+                            ? maintenanceDropdownRef
+                            : techniciansDropdownRef
+                    } 
+                    className="relative" 
+                    key={index}
+                  >
                     <button 
                       onClick={() => {
                         if (item.dropdownType === 'vehicles') {
                           setVehicleDropdownOpen(!vehicleDropdownOpen);
                           setDriversDropdownOpen(false);
+                          setMaintenanceDropdownOpen(false);
+                          setTechniciansDropdownOpen(false);
                         } else if (item.dropdownType === 'drivers') {
                           setDriversDropdownOpen(!driversDropdownOpen);
                           setVehicleDropdownOpen(false);
+                          setMaintenanceDropdownOpen(false);
+                          setTechniciansDropdownOpen(false);
+                        } else if (item.dropdownType === 'maintenance') {
+                          setMaintenanceDropdownOpen(!maintenanceDropdownOpen);
+                          setVehicleDropdownOpen(false);
+                          setDriversDropdownOpen(false);
+                          setTechniciansDropdownOpen(false);
+                        } else if (item.dropdownType === 'technicians') {
+                          setTechniciansDropdownOpen(!techniciansDropdownOpen);
+                          setVehicleDropdownOpen(false);
+                          setDriversDropdownOpen(false);
+                          setMaintenanceDropdownOpen(false);
                         }
                       }}
-                      className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-white"
+                      className="flex items-center px-2 py-1 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-white"
                     >
-                      <item.icon className="mr-2" />
+                      <item.icon className="mr-1" />
                       {item.label}
                       <RiArrowDownSLine className={`ml-1 transform ${
                         (item.dropdownType === 'vehicles' && vehicleDropdownOpen) || 
-                        (item.dropdownType === 'drivers' && driversDropdownOpen) 
+                        (item.dropdownType === 'drivers' && driversDropdownOpen) ||
+                        (item.dropdownType === 'maintenance' && maintenanceDropdownOpen) ||
+                        (item.dropdownType === 'technicians' && techniciansDropdownOpen)
                         ? 'rotate-180' : ''
                       } transition-transform duration-200`} />
                     </button>
                     {((item.dropdownType === 'vehicles' && vehicleDropdownOpen) || 
-                      (item.dropdownType === 'drivers' && driversDropdownOpen)) && (
+                      (item.dropdownType === 'drivers' && driversDropdownOpen) ||
+                      (item.dropdownType === 'maintenance' && maintenanceDropdownOpen) ||
+                      (item.dropdownType === 'technicians' && techniciansDropdownOpen)) && (
                       <div className="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                         <div className="py-1">
                           {item.children.map((child, childIndex) => (
                             <Link
                               key={childIndex}
                               to={child.path}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="flex items-center px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={() => {
                                 setVehicleDropdownOpen(false);
                                 setDriversDropdownOpen(false);
+                                setMaintenanceDropdownOpen(false);
+                                setTechniciansDropdownOpen(false);
                               }}
                             >
-                              <child.icon className="mr-2 text-gray-500" />
+                              <child.icon className="mr-1 text-gray-500" />
                               {child.label}
                             </Link>
                           ))}
@@ -139,9 +202,9 @@ export const AdminNavbar = () => {
                   <Link 
                     key={item.path}
                     to={item.path}
-                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-white"
+                    className="flex items-center px-2 py-1 rounded-md text-sm font-medium hover:bg-gray-700 hover:text-white"
                   >
-                    <item.icon className="mr-2" />
+                    <item.icon className="mr-1" />
                     {item.label}
                   </Link>
                 )
@@ -150,8 +213,7 @@ export const AdminNavbar = () => {
             
             <div className="flex items-center">
               <div className="flex items-center ml-4">
-                <div className="flex items-center space-x-3">
-                  <span className="hidden md:inline-block">{user?.email}</span>
+                <div className="flex items-center">
                   <Avatar 
                     src={user?.profilePic} 
                     fallbackSrc={fallbackAvatar}
@@ -160,7 +222,7 @@ export const AdminNavbar = () => {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="ml-4 px-3 py-1 rounded text-sm bg-red-600 hover:bg-red-700 flex items-center"
+                  className="ml-3 px-3 py-1 rounded text-sm bg-red-600 hover:bg-red-700 flex items-center"
                 >
                   <RiLogoutCircleLine className="mr-1" />
                   <span className="hidden md:inline">Logout</span>
@@ -194,9 +256,23 @@ export const AdminNavbar = () => {
                       if (item.dropdownType === 'vehicles') {
                         setVehicleDropdownOpen(!vehicleDropdownOpen);
                         setDriversDropdownOpen(false);
+                        setMaintenanceDropdownOpen(false);
+                        setTechniciansDropdownOpen(false);
                       } else if (item.dropdownType === 'drivers') {
                         setDriversDropdownOpen(!driversDropdownOpen);
                         setVehicleDropdownOpen(false);
+                        setMaintenanceDropdownOpen(false);
+                        setTechniciansDropdownOpen(false);
+                      } else if (item.dropdownType === 'maintenance') {
+                        setMaintenanceDropdownOpen(!maintenanceDropdownOpen);
+                        setVehicleDropdownOpen(false);
+                        setDriversDropdownOpen(false);
+                        setTechniciansDropdownOpen(false);
+                      } else if (item.dropdownType === 'technicians') {
+                        setTechniciansDropdownOpen(!techniciansDropdownOpen);
+                        setVehicleDropdownOpen(false);
+                        setDriversDropdownOpen(false);
+                        setMaintenanceDropdownOpen(false);
                       }
                     }}
                     className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-white hover:bg-gray-700"
@@ -205,14 +281,18 @@ export const AdminNavbar = () => {
                     {item.label}
                     <RiArrowDownSLine className={`ml-auto transform ${
                       (item.dropdownType === 'vehicles' && vehicleDropdownOpen) || 
-                      (item.dropdownType === 'drivers' && driversDropdownOpen) 
+                      (item.dropdownType === 'drivers' && driversDropdownOpen) ||
+                      (item.dropdownType === 'maintenance' && maintenanceDropdownOpen) ||
+                      (item.dropdownType === 'technicians' && techniciansDropdownOpen)
                       ? 'rotate-180' : ''
                     } transition-transform duration-200`} />
                   </button>
                   
                   <div className={`pl-4 space-y-1 ${
                     (item.dropdownType === 'vehicles' && vehicleDropdownOpen) || 
-                    (item.dropdownType === 'drivers' && driversDropdownOpen) 
+                    (item.dropdownType === 'drivers' && driversDropdownOpen) ||
+                    (item.dropdownType === 'maintenance' && maintenanceDropdownOpen) ||
+                    (item.dropdownType === 'technicians' && techniciansDropdownOpen)
                     ? 'block' : 'hidden'
                   }`}>
                     {item.children.map((child, childIndex) => (
@@ -245,7 +325,7 @@ export const AdminNavbar = () => {
       </nav>
 
       {/* Spacer to push content below navbar */}
-      <div className="h-16"></div>
+      <div className="h-14"></div>
     </>
   );
 };

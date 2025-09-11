@@ -20,53 +20,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    // Generate a unique request ID based on method, url, and request data
-    const method = config.method || 'unknown';
-    const url = config.url || '';
-    const requestId = `${method}:${url}:${JSON.stringify(config.data || {})}`;
-    
-    // Check if there's already a pending request with the same ID
-    if (method && method.toLowerCase() === 'get' && !config.bypassDeduplication) {
-      const existingRequest = pendingRequests.get(requestId);
-      if (existingRequest) {
-        // Return the same promise for duplicate GET requests
-        return existingRequest;
-      }
-      
-      // Create a new CancelToken source for this request
-      const source = axios.CancelToken.source();
-      config.cancelToken = source.token;
-      
-      // Create a new promise that will resolve when the request completes
-      const promise = new Promise((resolve, reject) => {
-        try {
-          // Execute the original request
-          axios(config)
-            .then(response => {
-              // Remove from pending requests when done
-              pendingRequests.delete(requestId);
-              resolve(response);
-            })
-            .catch(error => {
-              // Remove from pending requests on error too
-              pendingRequests.delete(requestId);
-              reject(error);
-            });
-        } catch (error) {
-          // Handle any synchronous errors in making the request
-          pendingRequests.delete(requestId);
-          reject(error);
-        }
-      });
-      
-      // Store the promise in our pending requests map
-      pendingRequests.set(requestId, promise);
-      
-      // Return the promise
-      return promise;
-    }
-    
+
+    // Deduplication logic (optional, but do NOT return a Promise here)
+    // If you want to deduplicate GET requests, you should handle it outside the interceptor or with a custom wrapper
+    // The request interceptor must always return the config object
+
     return config;
   },
   (error) => {

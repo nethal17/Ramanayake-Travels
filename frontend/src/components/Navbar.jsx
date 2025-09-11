@@ -8,7 +8,7 @@ import { Avatar } from "./Avatar";
 import { Dropdown } from "./Dropdown";
 import { LoginDialog } from "./LoginDialog";
 import { RegisterDialog } from "./RegisterDialog";
-import { isDriver, isAdmin, getProfilePath } from "../utils/roleUtils";
+import { isDriver, isAdmin, isTechnician, getProfilePath } from "../utils/roleUtils";
 
 export const Navbar = () => {
     const { isAuthenticated, logout, userId, user, userLoading, isAuthLoading } = useAuth();
@@ -149,7 +149,7 @@ export const Navbar = () => {
                                                         onClick={() => setOpenMenu(null)}
                                                     >
                                                         <RiUserLine size={16} />
-                                                        {isDriver(user) ? 'Driver Profile' : 'Profile'}
+                                                        {isDriver(user) ? 'Driver Profile' : isTechnician(user) ? 'Technician Profile' : 'Profile'}
                                                     </Link>
                                                 </li>
                                                 <li role="menuitem">
@@ -216,7 +216,7 @@ export const Navbar = () => {
                     <Link to={getProfilePath(user)} onClick={() => setSidebarOpen(false)}>
             <button type="button" className="flex items-center gap-1 px-3 py-1 text-sm text-blue-800 border border-blue-800 rounded-lg">
                         <RiUserLine size={14} />
-                        {isDriver(user) ? 'Driver Profile' : 'Profile'}
+                        {isDriver(user) ? 'Driver Profile' : isTechnician(user) ? 'Technician Profile' : 'Profile'}
                     </button>
                     </Link>
             <button 

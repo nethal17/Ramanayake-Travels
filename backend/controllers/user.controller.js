@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
-import { sendPasswordAfterVerification } from "./driver.controller.js";
+import { sendPasswordAfterVerification as sendDriverPassword } from "./driver.controller.js";
 
 const generateRefreshToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
@@ -94,9 +94,13 @@ export const verifyEmail = async (req, res) => {
         user.verificationToken = undefined;
         await user.save();
 
-        // If user is a driver, send password via email
+        // If user is a driver or technician, send password via email
         if (user.role === 'driver') {
-            await sendPasswordAfterVerification(user._id);
+            await sendDriverPassword(user._id);
+        } else if (user.role === 'technician') {
+            // Import the sendPasswordAfterVerification function from technician controller
+            const { sendPasswordAfterVerification: sendTechnicianPassword } = await import('../controllers/technician.controller.js');
+            await sendTechnicianPassword(user._id);
         }
 
         // Redirect to the success page

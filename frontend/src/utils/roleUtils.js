@@ -8,6 +8,11 @@ export const isAdmin = (user) => {
   return user?.role === 'admin';
 };
 
+// Utility function to check if a user is a technician
+export const isTechnician = (user) => {
+  return user?.role === 'technician';
+};
+
 // Utility function to check if a user is a customer
 export const isCustomer = (user) => {
   return user?.role === 'customer';
@@ -21,6 +26,8 @@ export const getProfilePath = (user) => {
     return '/driver-profile';
   } else if (isAdmin(user)) {
     return '/admin/dashboard';
+  } else if (isTechnician(user)) {
+    return '/technician-profile';
   } else {
     return '/customer-profile';
   }
@@ -43,6 +50,10 @@ export const hasPermission = (user, permission) => {
       return isCustomer(user);
     case 'view_driver_profile':
       return isDriver(user);
+    case 'view_technician_profile':
+      return isTechnician(user);
+    case 'manage_maintenance':
+      return isTechnician(user) || isAdmin(user);
     default:
       return false;
   }
