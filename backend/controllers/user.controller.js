@@ -2,6 +2,8 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import fs from "fs";
+import path from "path";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
 import { sendPasswordAfterVerification } from "./driver.controller.js";
 
@@ -519,15 +521,69 @@ export const updateUserDetails = async (req, res) => {
             return res.status(400).json({ message: "Name, email, and phone are required" });
         }
 
-        let updatedData = { name, email, phone };
+        // Check if email is already taken by another user
+        const existingUser = await User.findOne({ 
+            email: email,
+            _id: { $ne: id }
+        });
+        
+        if (existingUser) {
+            return res.status(400).json({ message: "Email is already taken by another user" });
+        }
 
-        const result = await User.findByIdAndUpdate(id, updatedData, { new: true });
-
-        if (!result) {
+        // Get current user to handle old profile picture cleanup
+        const currentUser = await User.findById(id);
+        if (!currentUser) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        res.status(200).json({ message: "User updated successfully", user: result });
+        let updatedData = { name, email, phone };
+
+        // Handle profile picture upload
+        if (req.file) {
+            // Delete old profile picture if it exists and is not the default
+            if (currentUser.profilePic && 
+                !currentUser.profilePic.includes('pixabay.com') && 
+                !currentUser.profilePic.includes('placeholder')) {
+                
+                try {
+                    // Extract filename from URL
+                    const oldFileName = path.basename(currentUser.profilePic);
+                    const oldFilePath = path.join(process.cwd(), 'uploads', oldFileName);
+                    
+                    if (fs.existsSync(oldFilePath)) {
+                        fs.unlinkSync(oldFilePath);
+                    }
+                } catch (cleanupError) {
+                    console.log('Error cleaning up old profile picture:', cleanupError);
+                    // Continue with update even if cleanup fails
+                }
+            }
+
+            // Generate the profile picture URL
+            const profilePicUrl = `http://localhost:5001/uploads/${req.file.filename}`;
+            updatedData.profilePic = profilePicUrl;
+        }
+
+        const result = await User.findByIdAndUpdate(id, updatedData, { new: true });
+
+        // Return user data without sensitive information
+        const userResponse = {
+            _id: result._id,
+            name: result.name,
+            email: result.email,
+            phone: result.phone,
+            role: result.role,
+            profilePic: result.profilePic,
+            isVerified: result.isVerified,
+            twoFactorEnabled: result.twoFactorEnabled,
+            createdAt: result.createdAt
+        };
+
+        res.status(200).json({ 
+            message: "Profile updated successfully", 
+            user: userResponse 
+        });
 
     } catch (err) {
         console.error("Error updating user:", err);

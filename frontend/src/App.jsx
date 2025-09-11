@@ -2,10 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 32309e90c850c42f3aa573ea80d4d0d659c13930
 // Layouts
 import CustomerLayout from './layouts/CustomerLayout';
 import AdminLayout from './layouts/AdminLayout';
@@ -60,12 +56,9 @@ function App() {
           <Route path="vehicles-list" element={<AdminVehiclesList />} />
           <Route path="vehicle-register" element={<AdminVehicleRegister />} />
           <Route path="company-vehicle-register" element={<CompanyVehicleRegister />} />
-<<<<<<< HEAD
           <Route path="reservations" element={<AdminReservations />} />
-=======
           <Route path="add-driver" element={<AddDriverPage />} />
           <Route path="driver-list" element={<DriverListPage />} />
->>>>>>> 32309e90c850c42f3aa573ea80d4d0d659c13930
           {/* Add more admin routes as needed */}
         </Route>
         
