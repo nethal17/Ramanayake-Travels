@@ -134,6 +134,11 @@ export function useAuth() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  // Function to update user data locally
+  const updateUser = (userData) => {
+    setUser(userData);
+  };
+
   return { 
     isAuthenticated, 
     isAuthLoading, 
@@ -142,6 +147,7 @@ export function useAuth() {
     userLoading, 
     userError, 
     refetchUser: fetchUser, 
+    updateUser,
     logout,
     getAuthHeaders
   };

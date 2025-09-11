@@ -43,7 +43,7 @@ const ForgotPassword = () => {
   };
 
   return (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
         <div className="w-full max-w-md px-8 py-10 mx-4 bg-white rounded-3xl shadow-2xl backdrop-blur-sm border border-white/20">
           {/* Decorative top border */}
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-blue-500 rounded-t-3xl"></div>

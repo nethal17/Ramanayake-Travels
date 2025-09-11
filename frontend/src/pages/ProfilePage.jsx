@@ -5,6 +5,8 @@ import { Tab } from '@headlessui/react';
 import { FaUser, FaCar, FaCalendarAlt } from 'react-icons/fa';
 import ReservationCard from "../components/ReservationCard";
 import MyVehiclesSection from "../components/MyVehiclesSection";
+import ChangePasswordDialog from "../components/ChangePasswordDialog";
+import EditProfileDialog from "../components/EditProfileDialog";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
@@ -13,6 +15,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [loadingUser, setLoadingUser] = useState(true);
   const [error, setError] = useState(null);
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
 
   useEffect(() => {
     fetchUserReservations();
@@ -42,7 +46,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">My Profile</h1>
+      <h1 className="text-3xl font-bold mb-8 mt-10">My Profile</h1>
       
       <Tab.Group>
         <Tab.List className="flex space-x-1 rounded-xl bg-blue-50 p-1 mb-8">
@@ -119,10 +123,22 @@ export default function ProfilePage() {
             ) : user ? (
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="bg-blue-100 rounded-full p-4 w-24 h-24 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-blue-600">
-                      {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
-                    </span>
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-200 bg-blue-100 flex items-center justify-center">
+                    {user.profilePic ? (
+                      <img
+                        src={user.profilePic}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.innerHTML = `<span class="text-4xl font-bold text-blue-600">${user.name?.charAt(0) || user.email?.charAt(0) || 'U'}</span>`;
+                        }}
+                      />
+                    ) : (
+                      <span className="text-4xl font-bold text-blue-600">
+                        {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                      </span>
+                    )}
                   </div>
                   
                   <div>
@@ -150,9 +166,19 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
-                <div className="flex justify-end">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                <div className="flex flex-2 justify-end gap-4">
+                  <button 
+                    onClick={() => setShowEditProfileDialog(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors"
+                  >
                     Edit Profile
+                  </button>
+
+                  <button 
+                    onClick={() => setShowChangePasswordDialog(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors"
+                  >
+                    Change Password
                   </button>
                 </div>
               </div>
@@ -227,6 +253,22 @@ export default function ProfilePage() {
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog 
+        open={showChangePasswordDialog} 
+        onClose={() => setShowChangePasswordDialog(false)} 
+      />
+
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog 
+        open={showEditProfileDialog} 
+        onClose={() => setShowEditProfileDialog(false)}
+        onUpdateSuccess={() => {
+          // Optionally refresh user data or handle success
+          toast.success("Profile updated successfully!");
+        }}
+      />
     </div>
   );
 }
