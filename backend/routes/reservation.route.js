@@ -1,5 +1,5 @@
 import express from 'express';
-import { isAuthenticated, isAdmin } from '../middleware/auth.js';
+import { isAuthenticated, isAdmin, isDriver } from '../middleware/auth.js';
 import * as reservationController from '../controllers/reservation.controller.js';
 
 const router = express.Router();
@@ -12,6 +12,10 @@ router.get('/check-availability', reservationController.checkVehicleAvailability
 router.post('/', isAuthenticated, reservationController.createReservation);
 router.get('/user', isAuthenticated, reservationController.getUserReservations);
 router.put('/:reservationId/cancel', isAuthenticated, reservationController.cancelReservation);
+
+// Driver routes
+router.get('/driver', isAuthenticated, isDriver, reservationController.getDriverReservations);
+router.put('/:reservationId/trip-status', isAuthenticated, isDriver, reservationController.updateTripStatus);
 
 // Admin routes
 router.get('/', isAuthenticated, isAdmin, reservationController.getAllReservations);

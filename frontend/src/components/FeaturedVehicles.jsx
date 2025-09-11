@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import axios from "axios";
+import { apiGet } from "../utils/apiUtils";
 import { 
   FaBusAlt, 
   FaShuttleVan, 
@@ -163,15 +164,16 @@ export const FeaturedVehicles = () => {
     const fetchVehicles = async () => {
       try {
         setLoading(true);
-        // Fetch all available vehicles
-        const response = await axios.get('http://localhost:5001/api/vehicles/search');
+        // Fetch all available vehicles using our apiGet utility
+        const data = await apiGet('/vehicles/search');
         
         // Sort vehicles by price (highest first) and take the first 3
-        const sortedVehicles = response.data
-          .sort((a, b) => b.price - a.price) // Sort by price, highest first
+        const sortedVehicles = data?.vehicles || data || [];
+        const featuredVehicles = sortedVehicles
+          .sort((a, b) => b.pricePerDay - a.pricePerDay) // Sort by price, highest first
           .slice(0, 3); // Take only first 3 vehicles
         
-        setVehicles(sortedVehicles);
+        setVehicles(featuredVehicles);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching featured vehicles:', err);

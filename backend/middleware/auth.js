@@ -70,6 +70,22 @@ export function isAdmin(req, res, next) {
   next();
 }
 
+export function isDriver(req, res, next) {
+  // Check if user exists and has driver role
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  if (req.user.role !== "driver") {
+    console.log('Access denied - Not a driver. User role:', req.user.role);
+    return res.status(403).json({ 
+      message: "Access denied - Driver only",
+      currentRole: req.user.role,
+      requiredRole: "driver" 
+    });
+  }
+  
+  console.log('Driver access granted for user:', req.user._id);
+  next();
+}
+
 // Aliases for backward compatibility
 export const protectRoute = isAuthenticated;
 export const adminRoute = isAdmin;

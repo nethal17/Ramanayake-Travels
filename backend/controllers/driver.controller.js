@@ -382,3 +382,83 @@ export const sendPasswordAfterVerification = async (userId) => {
         console.error('Send password email error:', error);
     }
 };
+
+// Get driver profile - for driver users to see their own profile
+export const getDriverProfile = async (req, res) => {
+    try {
+        // Get the logged-in driver's ID
+        const userId = req.user._id;
+        
+        console.log('Getting driver profile for user:', userId);
+        
+        // Find driver details by userId
+        const driver = await Driver.findOne({ userId });
+        
+        if (!driver) {
+            console.log('No driver profile found for userId:', userId);
+            return res.status(404).json({
+                success: false,
+                message: "Driver profile not found"
+            });
+        }
+        
+        console.log('Driver profile found:', driver._id);
+        
+        return res.status(200).json({
+            success: true,
+            ...driver.toObject()
+        });
+    } catch (error) {
+        console.error("Error getting driver profile:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error retrieving driver profile",
+            error: error.message
+        });
+    }
+};
+
+// Update driver availability
+export const updateDriverAvailability = async (req, res) => {
+    try {
+        // Get the logged-in driver's ID
+        const userId = req.user._id;
+        
+        // Get availability from request body
+        const { availability } = req.body;
+        
+        if (typeof availability !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: "Availability must be a boolean value"
+            });
+        }
+        
+        // Find and update driver availability
+        const driver = await Driver.findOneAndUpdate(
+            { userId },
+            { availability },
+            { new: true }
+        );
+        
+        if (!driver) {
+            return res.status(404).json({
+                success: false,
+                message: "Driver profile not found"
+            });
+        }
+        
+        return res.status(200).json({
+            success: true,
+            message: `Driver availability updated to ${availability ? 'available' : 'unavailable'}`,
+            driver
+        });
+    } catch (error) {
+        console.error("Error updating driver availability:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error updating driver availability",
+            error: error.message
+        });
+    }
+};

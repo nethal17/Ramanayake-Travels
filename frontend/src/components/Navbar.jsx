@@ -8,6 +8,7 @@ import { Avatar } from "./Avatar";
 import { Dropdown } from "./Dropdown";
 import { LoginDialog } from "./LoginDialog";
 import { RegisterDialog } from "./RegisterDialog";
+import { isDriver, isAdmin, getProfilePath } from "../utils/roleUtils";
 
 export const Navbar = () => {
     const { isAuthenticated, logout, userId, user, userLoading, isAuthLoading } = useAuth();
@@ -143,12 +144,12 @@ export const Navbar = () => {
                                             <ul className="flex flex-col p-2 w-50">
                                                 <li role="menuitem">
                                                     <Link 
-                                                        to="/profile" 
+                                                        to={getProfilePath(user)}
                                                         className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
                                                         onClick={() => setOpenMenu(null)}
                                                     >
                                                         <RiUserLine size={16} />
-                                                        Profile
+                                                        {isDriver(user) ? 'Driver Profile' : 'Profile'}
                                                     </Link>
                                                 </li>
                                                 <li role="menuitem">
@@ -212,10 +213,10 @@ export const Navbar = () => {
             {(isAuthLoading || userLoading) ? "Loading..." : user?.email || "No Email"}
                 </span>
                 <div className="flex mt-3 space-x-2">
-                    <Link to="/profile" onClick={() => setSidebarOpen(false)}>
+                    <Link to={getProfilePath(user)} onClick={() => setSidebarOpen(false)}>
             <button type="button" className="flex items-center gap-1 px-3 py-1 text-sm text-blue-800 border border-blue-800 rounded-lg">
                         <RiUserLine size={14} />
-                        Profile
+                        {isDriver(user) ? 'Driver Profile' : 'Profile'}
                     </button>
                     </Link>
             <button 

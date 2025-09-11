@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import { toast } from 'react-hot-toast';
+import { apiGet, apiPut } from '../utils/apiUtils';
 import { 
   FaSpinner, 
   FaCarSide, 
@@ -31,11 +31,8 @@ const MyReservations = () => {
   const fetchReservations = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        'http://localhost:5001/api/reservations/user',
-        { headers: getAuthHeaders() }
-      );
-      setReservations(response.data);
+      const data = await apiGet('/reservations/user');
+      setReservations(data);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching reservations:', err);
@@ -50,11 +47,7 @@ const MyReservations = () => {
       
       if (!confirmation) return;
       
-      await axios.put(
-        `http://localhost:5001/api/reservations/${reservationId}/cancel`,
-        {},
-        { headers: getAuthHeaders() }
-      );
+      await apiPut(`/reservations/${reservationId}/cancel`);
       
       toast.success('Reservation cancelled successfully');
       
@@ -146,7 +139,7 @@ const MyReservations = () => {
                   <div className="flex items-center mb-2 md:mb-0">
                     <FaCalendarAlt className="text-blue-600 mr-2" />
                     <span className="text-gray-700 font-medium mr-4">
-                      {new Date(reservation.pickupDate).toLocaleDateString()} - {new Date(reservation.returnDate).toLocaleDateString()}
+                      {new Date(reservation.pickupDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} - {new Date(reservation.returnDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                     </span>
                     <StatusBadge status={reservation.status} />
                   </div>
@@ -199,14 +192,14 @@ const MyReservations = () => {
                           <div className="flex items-center justify-end mt-1">
                             <FaUser className="text-gray-500 mr-1" />
                             <span>
-                              Driver: Rs. {formatPrice(reservation.driverPrice)}
+                              Driver: Rs. {formatPrice(reservation.driverPrice || 0)}
                             </span>
                           </div>
                         )}
                         <div className="flex items-center justify-end mt-1">
                           <FaMoneyBillWave className="text-gray-500 mr-1" />
                           <span>
-                            Base: Rs. {formatPrice(reservation.basePrice)}
+                            Base: Rs. {formatPrice(reservation.basePrice || reservation.totalPrice)}
                           </span>
                         </div>
                       </div>
@@ -218,20 +211,18 @@ const MyReservations = () => {
                     <div className="mt-6 bg-gray-50 p-4 rounded-md">
                       <h4 className="text-sm font-medium text-gray-900 mb-2">Driver Information</h4>
                       <div className="flex items-center">
-                        {reservation.driverId.imageUrl ? (
-                          <img 
-                            src={reservation.driverId.imageUrl} 
-                            alt={reservation.driverId.name} 
-                            className="w-12 h-12 rounded-full mr-4 object-cover"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-4">
-                            <FaUser className="text-gray-500" />
-                          </div>
-                        )}
+                        <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-4">
+                          <FaUser className="text-gray-500" />
+                        </div>
                         <div>
-                          <div className="font-medium">{reservation.driverId.name}</div>
-                          <div className="text-sm text-gray-600">{reservation.driverId.contactNumber}</div>
+                          {reservation.driverId.userId && typeof reservation.driverId.userId === 'object' ? (
+                            <div className="font-medium">{reservation.driverId.userId.name || 'Driver Name Unavailable'}</div>
+                          ) : (
+                            <div className="font-medium">Driver Assigned</div>
+                          )}
+                          <div className="text-sm text-gray-600">
+                            Age: {reservation.driverId.age || 'N/A'} | Experience: {reservation.driverId.yearsOfExperience || 0} years
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -240,8 +231,14 @@ const MyReservations = () => {
                   {/* Notes */}
                   {reservation.notes && (
                     <div className="mt-4 text-sm text-gray-600">
-                      <h4 className="font-medium text-gray-700">Notes:</h4>
+                      <h4 className="font-medium text-gray-700">Customer Details:</h4>
                       <p className="mt-1">{reservation.notes}</p>
+                      {reservation.userId && (
+                        <p className="mt-1">
+                          <strong>Name:</strong> {reservation.userId.name || 'N/A'}<br />
+                          <strong>Email:</strong> {reservation.userId.email || 'N/A'}
+                        </p>
+                      )}
                     </div>
                   )}
                   

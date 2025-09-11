@@ -28,6 +28,7 @@ export function useAuth() {
           const decoded = jwtDecode(token);
           setUserId(decoded?.id);
         } catch {}
+        setIsAuthLoading(false);
         return;
       }
 
@@ -46,10 +47,11 @@ export function useAuth() {
             const decoded = jwtDecode(response.data.token);
             setUserId(decoded?.id);
           } catch {}
+          setIsAuthLoading(false);
           return;
         }
-      } catch {
-        // ignore
+      } catch (error) {
+        console.error("Token refresh error:", error.message);
       }
 
   localStorage.removeItem('token');
@@ -81,6 +83,7 @@ export function useAuth() {
       );
       setUser(response.data);
     } catch (err) {
+      console.error("Error fetching user:", err.message);
       setUserError(err);
     } finally {
       setUserLoading(false);
@@ -106,8 +109,8 @@ export function useAuth() {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         }
       );
-    } catch {
-      // ignore
+    } catch (error) {
+      console.error("Logout error:", error.message);
     } finally {
       localStorage.removeItem('token');
       setIsAuthenticated(false);
@@ -140,6 +143,6 @@ export function useAuth() {
     userError, 
     refetchUser: fetchUser, 
     logout,
-    getAuthHeaders 
+    getAuthHeaders
   };
 }

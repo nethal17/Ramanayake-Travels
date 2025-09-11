@@ -39,9 +39,22 @@ const reservationSchema = new mongoose.Schema({
     type: Number, 
     default: 0 
   },
+  pickupLocation: {
+    type: String,
+    trim: true
+  },
+  returnLocation: {
+    type: String,
+    trim: true
+  },
   status: { 
     type: String, 
     enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+    default: 'pending'
+  },
+  tripStatus: {
+    type: String,
+    enum: ['pending', 'started', 'completed'],
     default: 'pending'
   },
   paymentStatus: {

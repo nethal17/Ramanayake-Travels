@@ -1,0 +1,455 @@
+import { useState, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { Tab } from '@headlessui/react';
+import { FaUser, FaIdCard, FaCalendarAlt, FaCar, FaRoad, FaMoneyBillWave } from 'react-icons/fa';
+import ReservationCard from "../components/ReservationCard";
+import toast from "react-hot-toast";
+import { apiGet, apiPut } from "../utils/apiUtils";
+
+export default function DriverProfilePage() {
+  const { user } = useAuth();
+  const [driverInfo, setDriverInfo] = useState(null);
+  const [assignedTrips, setAssignedTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingTrips, setLoadingTrips] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    completedTrips: 0,
+    upcomingTrips: 0,
+    totalEarnings: 0
+  });
+
+  useEffect(() => {
+    if (user?._id) {
+      fetchDriverInfo();
+      fetchAssignedTrips();
+    }
+  }, [user]);
+
+  const fetchDriverInfo = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching driver profile...');
+      // Fetch driver profile information from the API
+      const driverResponse = await apiGet(`/drivers/profile`);
+      
+      console.log('Driver profile response:', driverResponse);
+      if (driverResponse) {
+        setDriverInfo(driverResponse);
+      }
+    } catch (err) {
+      console.error('Error fetching driver information:', err);
+      setError('Failed to load your driver profile information');
+      toast.error('Failed to load driver information');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAssignedTrips = async () => {
+    try {
+      setLoadingTrips(true);
+      console.log('Fetching assigned trips...');
+      // Fetch driver's assigned trips from the API
+      const tripsResponse = await apiGet(`/reservations/driver`);
+      
+      console.log('Trips response:', tripsResponse);
+      if (tripsResponse) {
+        // Process trips data if needed
+        const processedTrips = tripsResponse.map(trip => ({
+          ...trip,
+          // Ensure we have consistent property names
+          pickupDate: trip.startDate || trip.pickupDate,
+          returnDate: trip.endDate || trip.returnDate,
+          pickupLocation: trip.pickupLocation || trip.startLocation || 'Not specified',
+          returnLocation: trip.returnLocation || trip.endLocation || 'Not specified',
+          vehicleId: trip.vehicle || trip.vehicleId,
+          userId: trip.customer || trip.userId,
+          driverRequired: trip.driverId ? true : (trip.driverRequired || false)
+        }));
+        
+        setAssignedTrips(processedTrips);
+        
+        // Calculate stats
+        const completed = processedTrips.filter(trip => trip.status === 'completed').length;
+        const upcoming = processedTrips.filter(trip => trip.status === 'confirmed').length;
+        const earnings = processedTrips
+          .filter(trip => trip.status === 'completed')
+          .reduce((total, trip) => total + trip.driverPrice, 0);
+        
+        setStats({
+          completedTrips: completed,
+          upcomingTrips: upcoming,
+          totalEarnings: earnings
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching assigned trips:', err);
+      setError('Failed to load your assigned trips');
+    } finally {
+      setLoadingTrips(false);
+    }
+  };
+
+  const handleAvailabilityToggle = async () => {
+    try {
+      // Update driver availability
+      await apiPut(`/drivers/availability`, { 
+        availability: !driverInfo.availability 
+      });
+      
+      // Update local state
+      setDriverInfo(prev => ({
+        ...prev,
+        availability: !prev.availability
+      }));
+      
+      toast.success(`You are now ${!driverInfo.availability ? 'available' : 'unavailable'} for new trips`);
+    } catch (err) {
+      console.error('Error updating availability:', err);
+      toast.error('Failed to update availability status');
+    }
+  };
+
+  // Format date helper function
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto py-8 px-4">
+      <h1 className="text-3xl font-bold mb-8">Driver Profile</h1>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-600">Completed Trips</p>
+              <h3 className="text-2xl font-bold">{stats.completedTrips}</h3>
+            </div>
+            <FaRoad className="text-3xl text-blue-500" />
+          </div>
+        </div>
+        
+        <div className="bg-green-50 rounded-xl p-4 border border-green-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-green-600">Upcoming Trips</p>
+              <h3 className="text-2xl font-bold">{stats.upcomingTrips}</h3>
+            </div>
+            <FaCalendarAlt className="text-3xl text-green-500" />
+          </div>
+        </div>
+        
+        <div className="bg-purple-50 rounded-xl p-4 border border-purple-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-purple-600">Total Earnings</p>
+              <h3 className="text-2xl font-bold">Rs {stats.totalEarnings.toLocaleString()}</h3>
+            </div>
+            <FaMoneyBillWave className="text-3xl text-purple-500" />
+          </div>
+        </div>
+      </div>
+      
+      <Tab.Group>
+        <Tab.List className="flex space-x-1 rounded-xl bg-blue-50 p-1 mb-8">
+          <Tab className={({ selected }) =>
+            `w-full py-2.5 text-sm font-medium leading-5 rounded-lg
+             ${selected
+              ? 'bg-white text-blue-700 shadow'
+              : 'text-blue-600 hover:bg-white/[0.12] hover:text-blue-700'
+            }`
+          }>
+            <div className="flex items-center justify-center">
+              <FaUser className="mr-2" />
+              <span>Driver Info</span>
+            </div>
+          </Tab>
+          <Tab className={({ selected }) =>
+            `w-full py-2.5 text-sm font-medium leading-5 rounded-lg
+             ${selected
+              ? 'bg-white text-blue-700 shadow'
+              : 'text-blue-600 hover:bg-white/[0.12] hover:text-blue-700'
+            }`
+          }>
+            <div className="flex items-center justify-center">
+              <FaCalendarAlt className="mr-2" />
+              <span>Assigned Trips</span>
+            </div>
+          </Tab>
+          <Tab className={({ selected }) =>
+            `w-full py-2.5 text-sm font-medium leading-5 rounded-lg
+             ${selected
+              ? 'bg-white text-blue-700 shadow'
+              : 'text-blue-600 hover:bg-white/[0.12] hover:text-blue-700'
+            }`
+          }>
+            <div className="flex items-center justify-center">
+              <FaIdCard className="mr-2" />
+              <span>License Information</span>
+            </div>
+          </Tab>
+        </Tab.List>
+        
+        <Tab.Panels>
+          {/* Driver Info Panel */}
+          <Tab.Panel className="rounded-xl bg-white p-6 border border-gray-200 shadow-md">
+            <h2 className="text-2xl font-semibold mb-6">Driver Information</h2>
+            
+            {loading ? (
+              <div className="animate-pulse space-y-6">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                  <div className="bg-gray-200 rounded-full p-4 w-24 h-24"></div>
+                  <div className="space-y-2">
+                    <div className="h-6 bg-gray-200 rounded w-48"></div>
+                    <div className="h-4 bg-gray-200 rounded w-40"></div>
+                    <div className="h-4 bg-gray-200 rounded w-36"></div>
+                  </div>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
+            ) : driverInfo ? (
+              <div>
+                <div className="flex flex-col md:flex-row gap-6 mb-6">
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={user?.profilePic || "https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_640.png"} 
+                      alt="Profile" 
+                      className="w-32 h-32 rounded-full border-4 border-blue-200"
+                    />
+                  </div>
+                  
+                  <div className="flex-grow">
+                    <h3 className="text-xl font-bold mb-1">{user?.name}</h3>
+                    <p className="text-gray-600 mb-2">{user?.email}</p>
+                    <p className="text-gray-600 mb-2">{user?.phone}</p>
+                    <p className="text-gray-600 mb-4">Age: {driverInfo.age} years</p>
+                    
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                        driverInfo.status === 'active' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {driverInfo.status === 'active' ? 'Active' : 'Suspended'}
+                      </span>
+                      
+                      <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                        driverInfo.availability 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {driverInfo.availability ? 'Available' : 'Unavailable'}
+                      </span>
+                    </div>
+                    
+                    <button
+                      onClick={handleAvailabilityToggle}
+                      className={`px-4 py-2 rounded-md text-white font-medium ${
+                        driverInfo.availability 
+                          ? 'bg-yellow-500 hover:bg-yellow-600' 
+                          : 'bg-blue-500 hover:bg-blue-600'
+                      }`}
+                    >
+                      {driverInfo.availability ? 'Set as Unavailable' : 'Set as Available'}
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h4 className="font-medium mb-3">Additional Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-gray-600">Address:</p>
+                      <p className="font-medium">{driverInfo.address}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Experience:</p>
+                      <p className="font-medium">{driverInfo.yearsOfExperience} years</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Daily Rate:</p>
+                      <p className="font-medium">Rs {driverInfo.dailyRate.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Joined:</p>
+                      <p className="font-medium">{formatDate(user?.createdAt)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No driver information found. Please contact administration.</p>
+              </div>
+            )}
+          </Tab.Panel>
+          
+          {/* Assigned Trips Panel */}
+          <Tab.Panel className="rounded-xl bg-white p-6 border border-gray-200 shadow-md">
+            <h2 className="text-2xl font-semibold mb-6">Assigned Trips</h2>
+            
+            {loadingTrips ? (
+              <div className="space-y-4">
+                {[1, 2].map((item) => (
+                  <div key={item} className="animate-pulse bg-gray-100 p-4 rounded-lg">
+                    <div className="h-6 bg-gray-200 rounded w-1/4 mb-3"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
+            ) : assignedTrips.length > 0 ? (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium mb-3">Upcoming Trips</h3>
+                  {assignedTrips.filter(trip => trip.status === 'confirmed').length > 0 ? (
+                    assignedTrips
+                      .filter(trip => trip.status === 'confirmed')
+                      .map((trip, index) => (
+                        <ReservationCard 
+                          key={trip._id} 
+                          reservation={trip} 
+                          index={index} 
+                          onUpdate={(id, status, tripStatus) => {
+                            // Update the trip in the list
+                            setAssignedTrips(prevTrips => 
+                              prevTrips.map(t => {
+                                if (t._id === id) {
+                                  return { 
+                                    ...t, 
+                                    status, 
+                                    tripStatus 
+                                  };
+                                }
+                                return t;
+                              })
+                            );
+                            
+                            // Update stats if needed
+                            if (status === 'completed') {
+                              setStats(prev => ({
+                                ...prev,
+                                completedTrips: prev.completedTrips + 1,
+                                upcomingTrips: Math.max(0, prev.upcomingTrips - 1),
+                                // Add driver's fee to earnings
+                                totalEarnings: prev.totalEarnings + (trip.driverPrice || 0)
+                              }));
+                            }
+                          }}
+                        />
+                      ))
+                  ) : (
+                    <p className="text-gray-500">No upcoming trips found</p>
+                  )}
+                </div>
+                
+                <div className="mb-4 pt-4 border-t">
+                  <h3 className="text-lg font-medium mb-3">Completed Trips</h3>
+                  {assignedTrips.filter(trip => trip.status === 'completed').length > 0 ? (
+                    assignedTrips
+                      .filter(trip => trip.status === 'completed')
+                      .map((trip, index) => (
+                        <ReservationCard 
+                          key={trip._id} 
+                          reservation={trip} 
+                          index={index} 
+                          onUpdate={(id, status, tripStatus) => {
+                            setAssignedTrips(prevTrips => 
+                              prevTrips.map(t => {
+                                if (t._id === id) {
+                                  return { ...t, status, tripStatus };
+                                }
+                                return t;
+                              })
+                            );
+                          }}
+                        />
+                      ))
+                  ) : (
+                    <p className="text-gray-500">No completed trips found</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No assigned trips found</p>
+              </div>
+            )}
+          </Tab.Panel>
+          
+          {/* License Information Panel */}
+          <Tab.Panel className="rounded-xl bg-white p-6 border border-gray-200 shadow-md">
+            <h2 className="text-2xl font-semibold mb-6">License Information</h2>
+            
+            {loading ? (
+              <div className="animate-pulse space-y-6">
+                <div className="h-6 bg-gray-200 rounded w-1/4 mb-3"></div>
+                <div className="h-40 bg-gray-200 rounded mb-4"></div>
+                <div className="h-40 bg-gray-200 rounded"></div>
+              </div>
+            ) : error ? (
+              <div className="text-red-500">{error}</div>
+            ) : driverInfo ? (
+              <div>
+                <div className="mb-6">
+                  <p className="text-gray-600 mb-2">License Number:</p>
+                  <p className="font-medium text-lg">{driverInfo.drivingLicense?.licenseNumber || 'N/A'}</p>
+                </div>
+                
+                {driverInfo.drivingLicense?.expiryDate && (
+                  <div className="mb-6">
+                    <p className="text-gray-600 mb-2">Expiry Date:</p>
+                    <p className="font-medium text-lg">{formatDate(driverInfo.drivingLicense.expiryDate)}</p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  <div>
+                    <h4 className="font-medium mb-3">Front Image</h4>
+                    {driverInfo.drivingLicense?.frontImage ? (
+                      <img 
+                        src={`http://localhost:5001/uploads/${driverInfo.drivingLicense.frontImage}`} 
+                        alt="License Front" 
+                        className="w-full rounded-lg border border-gray-200 shadow-sm"
+                      />
+                    ) : (
+                      <div className="bg-gray-100 p-8 text-center rounded-lg">
+                        <p className="text-gray-500">No front image available</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-medium mb-3">Back Image</h4>
+                    {driverInfo.drivingLicense?.backImage ? (
+                      <img 
+                        src={`http://localhost:5001/uploads/${driverInfo.drivingLicense.backImage}`} 
+                        alt="License Back" 
+                        className="w-full rounded-lg border border-gray-200 shadow-sm"
+                      />
+                    ) : (
+                      <div className="bg-gray-100 p-8 text-center rounded-lg">
+                        <p className="text-gray-500">No back image available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No license information found</p>
+              </div>
+            )}
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
+    </div>
+  );
+}

@@ -325,6 +325,20 @@ const AdminReservations = () => {
                         </div>
                       </div>
                       
+                      {/* Locations */}
+                      <div className="flex items-center">
+                        <FaMapMarkerAlt className="text-blue-600 mr-3" />
+                        <div>
+                          <p className="font-medium">Locations</p>
+                          <p className="text-gray-700">
+                            Pickup: {reservation.pickupLocation || 'Not specified'}
+                          </p>
+                          <p className="text-gray-700">
+                            Return: {reservation.returnLocation || 'Not specified'}
+                          </p>
+                        </div>
+                      </div>
+                      
                       {/* Driver & Payment Status */}
                       <div className="flex items-center">
                         <FaMapMarkerAlt className="text-blue-600 mr-3" />

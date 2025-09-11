@@ -57,6 +57,11 @@ const driverSchema = new mongoose.Schema({
     availability: {
         type: Boolean,
         default: true
+    },
+    dailyRate: {
+        type: Number,
+        default: 2500,
+        min: 1000
     }
 }, {
     timestamps: true

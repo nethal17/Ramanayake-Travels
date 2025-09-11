@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUserAlt, FaPhoneAlt, FaEnvelope } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUserAlt, FaPhoneAlt, FaEnvelope, FaUserTie } from 'react-icons/fa';
 import toast from 'react-hot-toast';
+import { apiGet } from '../utils/apiUtils';
 
 const ReservationForm = ({ vehicle }) => {
   const { user, isAuthenticated, getAuthHeaders } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
   const [formData, setFormData] = useState({
     pickupDate: '',
     returnDate: '',
     pickupLocation: '',
     returnLocation: '',
     driverRequired: false,
+    driverId: '',
     fullName: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
@@ -27,7 +31,46 @@ const ReservationForm = ({ vehicle }) => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+    
+    // If pickup date or return date changed and both are set, fetch available drivers
+    if ((name === 'pickupDate' || name === 'returnDate') && 
+        formData.pickupDate && formData.returnDate) {
+      fetchAvailableDrivers();
+    }
+    
+    // If driver is no longer required, clear the driver selection
+    if (name === 'driverRequired' && !checked) {
+      setFormData(prev => ({...prev, driverId: ''}));
+    }
   };
+  
+  // Function to fetch available drivers based on the selected dates
+  const fetchAvailableDrivers = async () => {
+    if (!formData.pickupDate || !formData.returnDate) return;
+    
+    try {
+      setLoadingDrivers(true);
+      // Query the backend API for available drivers
+      const response = await apiGet('/reservations/drivers', {
+        pickupDate: formData.pickupDate,
+        returnDate: formData.returnDate
+      });
+      
+      setAvailableDrivers(response);
+    } catch (error) {
+      console.error('Error fetching available drivers:', error);
+      toast.error('Failed to fetch available drivers');
+    } finally {
+      setLoadingDrivers(false);
+    }
+  };
+  
+  // When dates change, fetch available drivers
+  useEffect(() => {
+    if (formData.pickupDate && formData.returnDate && formData.driverRequired) {
+      fetchAvailableDrivers();
+    }
+  }, [formData.pickupDate, formData.returnDate]);
 
   const calculateTotalPrice = () => {
     if (!formData.pickupDate || !formData.returnDate) return 0;
@@ -44,7 +87,11 @@ const ReservationForm = ({ vehicle }) => {
     
     // Add driver fee if needed
     if (formData.driverRequired) {
-      totalPrice += 2500 * diffDays; // Driver fee per day
+      // If a specific driver is selected, use their rate, otherwise use default rate
+      const selectedDriver = formData.driverId && availableDrivers.find(d => d._id === formData.driverId);
+      const driverRate = selectedDriver ? selectedDriver.dailyRate : 2500; // Default rate if no specific driver selected
+      
+      totalPrice += driverRate * diffDays;
     }
     
     return totalPrice;
@@ -74,6 +121,12 @@ const ReservationForm = ({ vehicle }) => {
       return;
     }
     
+    // Validate driver selection if driver is required
+    if (formData.driverRequired && !formData.driverId) {
+      toast.error('Please select a driver');
+      return;
+    }
+    
     try {
       setLoading(true);
       const reservationData = {
@@ -83,6 +136,7 @@ const ReservationForm = ({ vehicle }) => {
         pickupLocation: formData.pickupLocation,
         returnLocation: formData.returnLocation,
         driverRequired: formData.driverRequired,
+        driverId: formData.driverRequired ? formData.driverId : null,
         notes: `Customer Name: ${formData.fullName}, Phone: ${formData.phone}, Email: ${formData.email}`
       };
       
@@ -197,8 +251,43 @@ const ReservationForm = ({ vehicle }) => {
               onChange={handleChange}
               className="mr-2 h-5 w-5 text-blue-600"
             />
-            <span>I need a driver (additional Rs 2,500/day)</span>
+            <span>I need a driver</span>
           </label>
+          
+          {formData.driverRequired && (
+            <div className="mt-4 ml-7">
+              <label className="block text-gray-700 font-medium mb-2">
+                <FaUserTie className="inline mr-2" />
+                Select Driver
+              </label>
+              {loadingDrivers ? (
+                <div className="animate-pulse flex space-x-4">
+                  <div className="flex-1 space-y-6 py-1">
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ) : availableDrivers.length > 0 ? (
+                <select
+                  name="driverId"
+                  value={formData.driverId}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required={formData.driverRequired}
+                >
+                  <option value="">Select a driver</option>
+                  {availableDrivers.map(driver => (
+                    <option key={driver._id} value={driver._id}>
+                      {driver.userId?.name} - Rs {driver.dailyRate}/day - {driver.yearsOfExperience} years exp.
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-red-500">
+                  No drivers available for the selected dates. Please choose different dates or continue without a driver.
+                </p>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -261,7 +350,13 @@ const ReservationForm = ({ vehicle }) => {
             {formData.driverRequired && (
               <div className="flex justify-between items-center mt-2">
                 <span className="text-gray-700">Driver Fee:</span>
-                <span className="font-medium">Rs 2,500 × {calculateTotalPrice() / vehicle.price} days</span>
+                {formData.driverId && availableDrivers.find(d => d._id === formData.driverId) ? (
+                  <span className="font-medium">
+                    Rs {availableDrivers.find(d => d._id === formData.driverId).dailyRate.toLocaleString()} × {calculateTotalPrice() / vehicle.price} days
+                  </span>
+                ) : (
+                  <span className="font-medium">Rs 2,500 × {calculateTotalPrice() / vehicle.price} days</span>
+                )}
               </div>
             )}
             <div className="flex justify-between items-center mt-2 text-lg font-bold">

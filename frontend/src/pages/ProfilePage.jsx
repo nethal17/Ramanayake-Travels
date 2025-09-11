@@ -208,6 +208,13 @@ export default function ProfilePage() {
                     key={reservation._id} 
                     reservation={reservation} 
                     index={index}
+                    onUpdate={(id, status) => {
+                      setReservations(prevReservations => 
+                        prevReservations.map(res => 
+                          res._id === id ? { ...res, status } : res
+                        )
+                      );
+                    }}
                   />
                 ))}
               </div>

@@ -7,9 +7,11 @@ import {
     getDriverById, 
     updateDriver,
     updateDriverStatus, 
-    deleteDriver 
+    deleteDriver,
+    getDriverProfile,
+    updateDriverAvailability
 } from '../controllers/driver.controller.js';
-import { isAuthenticated, isAdmin } from '../middleware/auth.js';
+import { isAuthenticated, isAdmin, isDriver } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -40,23 +42,23 @@ const upload = multer({
     }
 });
 
-// All routes require authentication and admin role
-router.use(isAuthenticated);
-router.use(isAdmin);
+// Driver profile routes - these come first to take precedence
+router.get('/profile', isAuthenticated, isDriver, getDriverProfile);
+router.put('/availability', isAuthenticated, isDriver, updateDriverAvailability);
 
-// Driver routes
-router.post('/create', upload.fields([
+// Admin routes - only accessible to admins
+router.post('/create', isAuthenticated, isAdmin, upload.fields([
     { name: 'frontLicense', maxCount: 1 },
     { name: 'backLicense', maxCount: 1 }
 ]), createDriver);
 
-router.get('/list', getAllDrivers);
-router.get('/:id', getDriverById);
-router.put('/:id', upload.fields([
+router.get('/list', isAuthenticated, isAdmin, getAllDrivers);
+router.get('/:id', isAuthenticated, isAdmin, getDriverById);
+router.put('/:id', isAuthenticated, isAdmin, upload.fields([
     { name: 'frontLicense', maxCount: 1 },
     { name: 'backLicense', maxCount: 1 }
 ]), updateDriver);
-router.put('/:id/status', updateDriverStatus);
-router.delete('/:id', deleteDriver);
+router.put('/:id/status', isAuthenticated, isAdmin, updateDriverStatus);
+router.delete('/:id', isAuthenticated, isAdmin, deleteDriver);
 
 export default router;
