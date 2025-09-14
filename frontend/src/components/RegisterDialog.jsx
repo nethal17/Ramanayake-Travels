@@ -17,6 +17,8 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const dialogRef = useRef(null);
   const firstFieldRef = useRef(null);
 
@@ -29,18 +31,167 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setErrors({});
+      setTouched({});
+    }
+  }, [open]);
+
+  // Validation functions
+  const validateName = (value) => {
+    if (!value.trim()) return "Full name is required";
+    if (value.trim().length < 2) return "Name must be at least 2 characters";
+    if (value.trim().length > 50) return "Name must be less than 50 characters";
+    if (!/^[a-zA-Z\s]+$/.test(value.trim())) return "Name can only contain letters and spaces";
+    return "";
+  };
+
+  const validateEmail = (value) => {
+    if (!value.trim()) return "Email is required";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) return "Please enter a valid email address";
+    return "";
+  };
+
+  const validatePhone = (value) => {
+    if (!value.trim()) return "Phone number is required";
+    const phoneRegex = /^0[0-9]{9}$/; // Sri Lankan phone format: 0XXXXXXXXX
+    if (!phoneRegex.test(value)) return "Please enter a valid 10-digit phone number starting with 0";
+    return "";
+  };
+
+  const validatePassword = (value) => {
+    if (!value) return "Password is required";
+    if (value.length < 6) return "Password must be at least 6 characters";
+    if (value.length > 128) return "Password must be less than 128 characters";
+    if (!/(?=.*[a-z])/.test(value)) return "Password must contain at least one lowercase letter";
+    if (!/(?=.*[A-Z])/.test(value)) return "Password must contain at least one uppercase letter";
+    if (!/(?=.*\d)/.test(value)) return "Password must contain at least one number";
+    return "";
+  };
+
+  // Real-time validation
+  const validateField = (fieldName, value) => {
+    let error = "";
+    switch (fieldName) {
+      case "name":
+        error = validateName(value);
+        break;
+      case "email":
+        error = validateEmail(value);
+        break;
+      case "phone":
+        error = validatePhone(value);
+        break;
+      case "password":
+        error = validatePassword(value);
+        break;
+      default:
+        break;
+    }
+    
+    setErrors(prev => ({
+      ...prev,
+      [fieldName]: error
+    }));
+    
+    return error === "";
+  };
+
+  // Handle field changes with validation
+  const handleFieldChange = (fieldName, value) => {
+    switch (fieldName) {
+      case "name":
+        setName(value);
+        break;
+      case "email":
+        setEmail(value);
+        break;
+      case "phone":
+        // Only allow numeric input for phone
+        const numericValue = value.replace(/\D/g, "");
+        if (numericValue.length <= 10) {
+          setPhone(numericValue);
+        }
+        break;
+      case "password":
+        setPassword(value);
+        break;
+      default:
+        break;
+    }
+
+    // Validate if field has been touched
+    if (touched[fieldName]) {
+      validateField(fieldName, fieldName === "phone" ? value.replace(/\D/g, "") : value);
+    }
+  };
+
+  // Handle field blur
+  const handleFieldBlur = (fieldName) => {
+    setTouched(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
+    
+    const value = fieldName === "name" ? name : 
+                 fieldName === "email" ? email :
+                 fieldName === "phone" ? phone :
+                 fieldName === "password" ? password : "";
+    
+    validateField(fieldName, value);
+  };
+
   const onBackdropClick = (e) => {
     if (dialogRef.current && !dialogRef.current.contains(e.target)) onClose?.();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Mark all fields as touched
+    setTouched({
+      name: true,
+      email: true,
+      phone: true,
+      password: true
+    });
+
+    // Validate all fields
+    const nameError = validateName(name);
+    const emailError = validateEmail(email);
+    const phoneError = validatePhone(phone);
+    const passwordError = validatePassword(password);
+
+    const newErrors = {
+      name: nameError,
+      email: emailError,
+      phone: phoneError,
+      password: passwordError
+    };
+
+    setErrors(newErrors);
+
+    // Check if there are any errors
+    const hasErrors = Object.values(newErrors).some(error => error !== "");
+    
+    if (hasErrors) {
+      toast.error("Please fix the errors before submitting");
+      return;
+    }
+
     setLoading(true);
     try {
       const role = "customer";
       const { data } = await axios.post(
         "http://localhost:5001/api/auth/register",
-        { name, email, phone, password, role },
+        { name: name.trim(), email: email.trim(), phone, password, role },
         { withCredentials: true }
       );
       toast.success(data?.msg || "Registered. Check your email to verify.");
@@ -117,23 +268,38 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
                   transition={{ delay: 0.1 }}
                 >
                   <label htmlFor="name" className="mb-2 block text-sm font-medium text-gray-900">
-                    Full Name
+                    Full Name <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiUserLine className="h-5 w-5 text-gray-900/50" />
+                      <RiUserLine className={`h-5 w-5 ${errors.name ? 'text-red-500' : 'text-gray-900/50'}`} />
                     </div>
                     <input
                       id="name"
                       ref={firstFieldRef}
                       type="text"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-gray-900/20 pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      onChange={(e) => handleFieldChange("name", e.target.value)}
+                      onBlur={() => handleFieldBlur("name")}
+                      className={`w-full rounded-lg border pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:border-transparent transition-all ${
+                        errors.name 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-900/20 focus:ring-blue-500'
+                      }`}
                       placeholder="John Doe"
+                      aria-describedby={errors.name ? "name-error" : undefined}
                     />
                   </div>
+                  {errors.name && touched.name && (
+                    <motion.p
+                      id="name-error"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-1 text-sm text-red-600"
+                    >
+                      {errors.name}
+                    </motion.p>
+                  )}
                 </motion.div>
 
                 {/* Email Field */}
@@ -144,22 +310,37 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
                   transition={{ delay: 0.15 }}
                 >
                   <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-900">
-                    Email Address
+                    Email Address <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiMailLine className="h-5 w-5 text-gray-900/50" />
+                      <RiMailLine className={`h-5 w-5 ${errors.email ? 'text-red-500' : 'text-gray-900/50'}`} />
                     </div>
                     <input
                       id="email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-gray-900/20 pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      onChange={(e) => handleFieldChange("email", e.target.value)}
+                      onBlur={() => handleFieldBlur("email")}
+                      className={`w-full rounded-lg border pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:border-transparent transition-all ${
+                        errors.email 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-900/20 focus:ring-blue-500'
+                      }`}
                       placeholder="you@example.com"
+                      aria-describedby={errors.email ? "email-error" : undefined}
                     />
                   </div>
+                  {errors.email && touched.email && (
+                    <motion.p
+                      id="email-error"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-1 text-sm text-red-600"
+                    >
+                      {errors.email}
+                    </motion.p>
+                  )}
                 </motion.div>
 
                 {/* Phone Field */}
@@ -170,24 +351,40 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
                   transition={{ delay: 0.2 }}
                 >
                   <label htmlFor="phone" className="mb-2 block text-sm font-medium text-gray-900">
-                    Phone Number
+                    Phone Number <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiPhoneLine className="h-5 w-5 text-gray-900/50" />
+                      <RiPhoneLine className={`h-5 w-5 ${errors.phone ? 'text-red-500' : 'text-gray-900/50'}`} />
                     </div>
                     <input
                       id="phone"
                       type="tel"
                       inputMode="numeric"
-                      title="10-digit phone number"
+                      title="10-digit phone number starting with 0"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-gray-900/20 pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="07XXXXXXXX"
+                      onChange={(e) => handleFieldChange("phone", e.target.value)}
+                      onBlur={() => handleFieldBlur("phone")}
+                      maxLength={10}
+                      className={`w-full rounded-lg border pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:border-transparent transition-all ${
+                        errors.phone 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-900/20 focus:ring-blue-500'
+                      }`}
+                      placeholder="0771234567"
+                      aria-describedby={errors.phone ? "phone-error" : undefined}
                     />
                   </div>
+                  {errors.phone && touched.phone && (
+                    <motion.p
+                      id="phone-error"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-1 text-sm text-red-600"
+                    >
+                      {errors.phone}
+                    </motion.p>
+                  )}
                 </motion.div>
 
                 {/* Password Field */}
@@ -198,23 +395,61 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
                   transition={{ delay: 0.25 }}
                 >
                   <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-900">
-                    Password
+                    Password <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <RiLockLine className="h-5 w-5 text-gray-900/50" />
+                      <RiLockLine className={`h-5 w-5 ${errors.password ? 'text-red-500' : 'text-gray-900/50'}`} />
                     </div>
                     <input
                       id="password"
                       type="password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="w-full rounded-lg border border-gray-900/20 pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      onChange={(e) => handleFieldChange("password", e.target.value)}
+                      onBlur={() => handleFieldBlur("password")}
+                      className={`w-full rounded-lg border pl-10 pr-4 py-3 text-gray-900 placeholder-gray-900/40 outline-none focus:ring-2 focus:border-transparent transition-all ${
+                        errors.password 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-900/20 focus:ring-blue-500'
+                      }`}
                       placeholder="••••••••"
+                      aria-describedby={errors.password ? "password-error" : undefined}
                     />
                   </div>
+                  {errors.password && touched.password && (
+                    <motion.p
+                      id="password-error"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-1 text-sm text-red-600"
+                    >
+                      {errors.password}
+                    </motion.p>
+                  )}
+                  {/* Password Requirements */}
+                  {touched.password && !errors.password && password && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-2 text-xs text-gray-600"
+                    >
+                      <p>Password requirements:</p>
+                      <ul className="list-disc list-inside space-y-1 mt-1">
+                        <li className={password.length >= 6 ? 'text-green-600' : 'text-gray-600'}>
+                          At least 6 characters
+                        </li>
+                        <li className={/(?=.*[a-z])/.test(password) ? 'text-green-600' : 'text-gray-600'}>
+                          One lowercase letter
+                        </li>
+                        <li className={/(?=.*[A-Z])/.test(password) ? 'text-green-600' : 'text-gray-600'}>
+                          One uppercase letter
+                        </li>
+                        <li className={/(?=.*\d)/.test(password) ? 'text-green-600' : 'text-gray-600'}>
+                          One number
+                        </li>
+                      </ul>
+                    </motion.div>
+                  )}
                 </motion.div>
 
                 {/* Submit Button */}
@@ -267,7 +502,7 @@ export const RegisterDialog = ({ open, onClose, onSwitchToLogin }) => {
             </div>
 
             {/* Footer decoration */}
-            <div className="h-2 w-full bg-blue-500 opacity-70" />
+            <div className="h-2 w-full bg-blue-500" />
           </motion.div>
         </motion.div>
       )}

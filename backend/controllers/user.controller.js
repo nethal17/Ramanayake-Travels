@@ -70,7 +70,7 @@ export const sendVerificationCode = async (email, code) => {
                 </tr>
                 <tr>
                     <td style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                        <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                     </td>
                 </tr>
             </table>
@@ -118,6 +118,20 @@ export const registerUser = async (req, res) => {
     
     if (!name || !email || !phone || !password || !role) {
         return res.status(400).json({ msg: "Please fill in all fields." });
+    }
+
+    const validateEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    if (!validateEmail(email)) {
+        return res.status(400).json({ msg: "Invalid email format." });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ msg: "Password must be at least 6 characters long." });
+    }
+
+    const validatePhone = (phone) => /^0\d{9}$/.test(phone);
+    if (!validatePhone(phone)) {
+        return res.status(400).json({ msg: "Invalid phone number format." });
     }
 
     try {
@@ -169,7 +183,7 @@ export const registerUser = async (req, res) => {
                     </div>
                     
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                        <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                     </div>
                 </div>
             `
@@ -319,11 +333,14 @@ export const loginUser = async (req, res) => {
 export const logoutUser = async (req, res) => {
     try {
         const refreshToken = req.cookies.refreshToken;
+        const token = req.headers.authorization?.split(" ")[1];
+
         if (refreshToken) {
             const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
             await User.findByIdAndUpdate(decoded.id, { $unset: { refreshToken: "" } });
         }
 
+        blacklistedTokens.add(token);
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken");
         localStorage.clear();
@@ -349,7 +366,7 @@ export const forgotPassword = async (req, res) => {
         const mailOptions = {
             ...defaultMailOptions,
             to: user.email,
-            subject: "Password Reset Request - Agri-Waste Marketplace",
+            subject: "Password Reset Request - Ramanayake Travels",
             html: `
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <tr>
@@ -395,7 +412,7 @@ export const forgotPassword = async (req, res) => {
                     </tr>
                     <tr>
                         <td style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                            <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                            <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>
@@ -672,7 +689,7 @@ export const deleteUser = async (req, res) => {
             const mailOptions = {
                 ...defaultMailOptions,
                 to: userEmail,
-                subject: "Account Deletion Notice - Agri-Waste Marketplace",
+                subject: "Account Deletion Notice - Ramanayake Travels",
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
                         <div style="text-align: center; margin-bottom: 30px;">
@@ -682,7 +699,7 @@ export const deleteUser = async (req, res) => {
                         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
                             <p style="color: #34495e; margin-bottom: 20px;">Dear ${userName},</p>
                             
-                            <p style="color: #34495e;">We regret to inform you that your account has been deleted from the Agri-Waste Marketplace platform.</p>
+                            <p style="color: #34495e;">We regret to inform you that your account has been deleted from the Ramanayake Travels platform.</p>
                             
                             <p style="color: #34495e;">If you wish to continue using our services, you can register a new account by clicking the button below:</p>
                             
@@ -698,7 +715,7 @@ export const deleteUser = async (req, res) => {
                         </div>
                         
                         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                            <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                            <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                         </div>
                     </div>
                 `
@@ -718,7 +735,7 @@ export const deleteUser = async (req, res) => {
         const mailOptions = {
             ...defaultMailOptions,
             to: user.email,
-            subject: "Account Deactivation Notice - Agri-Waste Marketplace",
+            subject: "Account Deactivation Notice - Ramanayake Travels",
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
                     <div style="text-align: center; margin-bottom: 30px;">
@@ -728,7 +745,7 @@ export const deleteUser = async (req, res) => {
                     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
                         <p style="color: #34495e; margin-bottom: 20px;">Dear ${user.name},</p>
                         
-                        <p style="color: #34495e;">We regret to inform you that your account has been deactivated. This means you will no longer have access to the Agri-Waste Marketplace platform.</p>
+                        <p style="color: #34495e;">We regret to inform you that your account has been deactivated. This means you will no longer have access to the Ramanayake Travels platform.</p>
                         
                         <p style="color: #34495e;">If you wish to reactivate your account, please login to your account using the button below:</p>
                         
@@ -744,7 +761,7 @@ export const deleteUser = async (req, res) => {
                     </div>
                     
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                        <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                     </div>
                 </div>
             `

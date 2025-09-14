@@ -21,7 +21,6 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
   const firstFieldRef = useRef(null);
   const navigate = useNavigate();
 
-  // Close on ESC and focus first field
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") onClose?.();
@@ -88,10 +87,8 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
             className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            {/* Header with blue accent */}
             <div className="h-2 w-full bg-blue-500" />
-            
-            {/* Header */}
+
             <div className="px-8 pt-8 pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -106,23 +103,19 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
                   type="button"
                   onClick={onClose}
                   aria-label="Close login dialog"
-                  className="inline-flex items-center justify-center rounded-full p-2 text-gray-900 hover:bg-gray-900/5 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full p-2 text-gray-900 hover:bg-gray-900/5 transition-colors cursor-pointer"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
                   <RiCloseLine size={22} />
                 </motion.button>
               </div>
-              <p className="mt-2 text-sm text-gray-900/70">
+              <p className="mt-3 text-sm text-gray-900/50 mb-8">
                 Sign in to access your Ramanayaka Transport account
               </p>
             </div>
 
-        {/* Body */}
-        <div className="px-6 pb-6">
-          <p className="mb-10 text-sm text-gray-900/50">
-            Sign in to continue to Ramanayake Travels
-          </p>
+            <div className="px-8 pb-6">
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -158,7 +151,7 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
 
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-900/70 pb-2">
-                <a className="hover:underline" href="/forgot-password">Forgot password?</a>
+                <a className="hover:underline text-blue-500" href="/forgot-password">Forgot password?</a>
               </div>
             </div>
 
@@ -171,7 +164,7 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
                   <motion.button
                     type="submit"
                     disabled={loading}
-                    className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-blue-500 px-4 py-3 font-medium text-white shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 transition-colors"
+                    className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-blue-500 px-4 py-3 font-medium text-white shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-70 transition-colors cursor-pointer"
                     whileHover={!loading ? { scale: 1.02 } : {}}
                     whileTap={!loading ? { scale: 0.98 } : {}}
                   >
@@ -200,7 +193,7 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
                     New to Ramanayaka Transport?{" "}
                     <motion.button 
                       type="button" 
-                      className="text-blue-500 font-medium hover:text-blue-600 hover:underline transition-colors"
+                      className="text-blue-500 font-medium hover:text-blue-600 hover:underline transition-colors cursor-pointer"
                       onClick={() => { onClose?.(); onOpenRegister?.(); }}
                       whileHover={{ x: 2 }}
                     >
@@ -211,8 +204,7 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
               </form>
             </div>
 
-            {/* Footer decoration */}
-            <div className="h-2 w-full bg-blue-500 opacity-70" />
+            <div className="h-2 w-full bg-blue-500" />
           </motion.div>
         </motion.div>
       )}
