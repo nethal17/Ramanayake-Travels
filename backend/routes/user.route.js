@@ -34,16 +34,22 @@ const upload = multer({
     }
 });
 
+// Public routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/verify-email/:token", verifyEmail);
 router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logoutUser);
-router.get("/searchUser/:id", getUserById);
-router.get("/allUsers", protectRoute, adminRoute, getUsers);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+
+// Protected routes
 router.post("/change-password/:id", protectRoute, changePassword);
+router.get("/searchUser/:id", protectRoute, getUserById);
 router.put("/update/:id", protectRoute, upload.single('profilePic'), updateUserDetails);
+
+// Admin routes
+router.get("/allUsers", protectRoute, adminRoute, getUsers);
+
 
 export default router;

@@ -7,20 +7,44 @@ import path from "path";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
 import { sendPasswordAfterVerification as sendDriverPassword } from "./driver.controller.js";
 
+// Generate JWT tokens
 const generateRefreshToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 };
 
+// Generate Access Token
 const generateAccessToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
+// Refresh Access Token
+export const refreshAccessToken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+        return res.status(401).json({ msg: "No refresh token provided" });
+    }
+    try {
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(payload.id);
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(403).json({ msg: "Invalid refresh token" });
+        }
+        const newAccessToken = generateAccessToken(user._id);
+        res.json({ token: newAccessToken });
+    } catch (err) {
+        return res.status(403).json({ msg: "Invalid or expired refresh token" });
+    }
+};
+
+// In-memory token blacklist
 export const blacklistedTokens = new Set();
 
+// Generate a 6-digit verification code
 export const generateVerificationCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+// Send verification code via email
 export const sendVerificationCode = async (email, code) => {
     const mailOptions = {
         ...defaultMailOptions,
@@ -80,6 +104,7 @@ export const sendVerificationCode = async (email, code) => {
     await transporter.sendMail(mailOptions);
 };
 
+// Verify email using verification link
 export const verifyEmail = async (req, res) => {
     const { token } = req.params;
 
@@ -112,6 +137,7 @@ export const verifyEmail = async (req, res) => {
     }
 };
 
+// Create new user account
 export const registerUser = async (req, res) => {
     const { name, email, phone, password, role } = req.body;
 
@@ -201,6 +227,7 @@ export const registerUser = async (req, res) => {
     }
 };
 
+// User Login to the system
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -282,54 +309,7 @@ export const loginUser = async (req, res) => {
     }
 };
 
-/*export const logoutUser = async (req, res) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!token && !refreshToken) {
-        console.log("Logout failed: No token or refresh token provided");
-        return res.status(400).json({ message: "No token or refresh token provided" });
-    }
-
-    if (token && blacklistedTokens.has(token)) {
-        return res.status(401).json({ msg: "You are already logged out. Please log in." });
-    }
-
-    try {
-        if (token) {
-            // Add access token to blacklist
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            blacklistedTokens.add(token);
-        }
-
-        if (refreshToken) {
-            // Remove refresh token from user document
-            const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            await User.findByIdAndUpdate(payload.id, { $unset: { refreshToken: "" } });
-            res.clearCookie("refreshToken", {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-            });
-        }
-
-        res.status(200).json({ message: "Logged out successfully" });
-    } catch (err) {
-        console.error("Logout error:", err);
-
-        if (err.name === "JsonWebTokenError") {
-            return res.status(401).json({ msg: "Invalid token" });
-        }
-
-        if (err.name === "TokenExpiredError") {
-            return res.status(401).json({ msg: "Token has expired" });
-        }
-
-        res.status(500).json({ msg: "Server Error" });
-    }
-}; */
-
+// User Logout from the system
 export const logoutUser = async (req, res) => {
     try {
         const refreshToken = req.cookies.refreshToken;
@@ -350,6 +330,7 @@ export const logoutUser = async (req, res) => {
     }
 }  
 
+// Forgot Password - Send Reset Link
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
@@ -428,6 +409,7 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
+// Reset Password using the token
 export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
@@ -457,58 +439,7 @@ export const resetPassword = async (req, res) => {
     }
 };
 
-export const verifyTwoStepCode = async (req, res) => {
-    const { userId, code } = req.body;
-
-    try {
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ msg: "User not found" });
-        }
-
-        if (
-            user.twoStepVerificationCode === code &&
-            user.twoStepVerificationExpire > Date.now()
-        ) {
-            user.twoStepVerificationCode = undefined;
-            user.twoStepVerificationExpire = undefined;
-            await user.save();
-
-            const token = jwt.sign(
-                { id: user._id, role: user.role },
-                process.env.JWT_SECRET,
-                { expiresIn: "1d" }
-            );
-
-            // Return a single response with all necessary data
-            res.json({ 
-                token, 
-                user: { 
-                    _id: user._id,
-                    name: user.name, 
-                    email: user.email, 
-                    phone: user.phone,
-                    role: user.role,
-                    profilePic: user.profilePic,
-                    isVerified: user.isVerified,
-                    twoFactorEnabled: user.twoFactorEnabled,
-                    createdAt: user.createdAt
-                } 
-            });
-
-            user.isVerified = true;
-            await user.save();
-
-        } else {
-            res.status(400).json({ msg: "Invalid or expired verification code" });
-        }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ msg: "Server Error" });
-    }
-};
-
+// Get all users (admin only)
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find({});
@@ -520,6 +451,7 @@ export const getUsers = async (req, res) => {
     }
 };
 
+// Get user by ID
 export const getUserById = async (req, res) => {
     const { id } = req.params;
 
@@ -533,6 +465,7 @@ export const getUserById = async (req, res) => {
     }
 };
 
+// Update user details
 export const updateUserDetails = async (req, res) => {
     const { id } = req.params;
 
@@ -612,24 +545,7 @@ export const updateUserDetails = async (req, res) => {
     }
 };
 
-export const updateSecurityTimestamp = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const user = await User.findByIdAndUpdate(
-            id,
-            { lastSecurityUpdate: new Date() },
-            { new: true }
-        );
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json({ message: "Security timestamp updated", lastSecurityUpdate: user.lastSecurityUpdate });
-    } catch (err) {
-        console.error("Error updating security timestamp:", err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
+// Change user password
 export const changePassword = async (req, res) => {
     const { id } = req.params;
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
@@ -659,6 +575,25 @@ export const changePassword = async (req, res) => {
         res.status(200).json({ message: "Password changed successfully" });
     } catch (err) {
         console.error("Error changing password:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+/*
+export const updateSecurityTimestamp = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const user = await User.findByIdAndUpdate(
+            id,
+            { lastSecurityUpdate: new Date() },
+            { new: true }
+        );
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({ message: "Security timestamp updated", lastSecurityUpdate: user.lastSecurityUpdate });
+    } catch (err) {
+        console.error("Error updating security timestamp:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -875,22 +810,59 @@ export const exportUsers = async (req, res) => {
     }
 };
 
-export const refreshAccessToken = async (req, res) => {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-        return res.status(401).json({ msg: "No refresh token provided" });
-    }
+export const verifyTwoStepCode = async (req, res) => {
+    const { userId, code } = req.body;
+
     try {
-    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-        const user = await User.findById(payload.id);
-        if (!user || user.refreshToken !== refreshToken) {
-            return res.status(403).json({ msg: "Invalid refresh token" });
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
         }
-        const newAccessToken = generateAccessToken(user._id);
-        res.json({ token: newAccessToken });
+
+        if (
+            user.twoStepVerificationCode === code &&
+            user.twoStepVerificationExpire > Date.now()
+        ) {
+            user.twoStepVerificationCode = undefined;
+            user.twoStepVerificationExpire = undefined;
+            await user.save();
+
+            const token = jwt.sign(
+                { id: user._id, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: "1d" }
+            );
+
+            // Return a single response with all necessary data
+            res.json({ 
+                token, 
+                user: { 
+                    _id: user._id,
+                    name: user.name, 
+                    email: user.email, 
+                    phone: user.phone,
+                    role: user.role,
+                    profilePic: user.profilePic,
+                    isVerified: user.isVerified,
+                    twoFactorEnabled: user.twoFactorEnabled,
+                    createdAt: user.createdAt
+                } 
+            });
+
+            user.isVerified = true;
+            await user.save();
+
+        } else {
+            res.status(400).json({ msg: "Invalid or expired verification code" });
+        }
     } catch (err) {
-        return res.status(403).json({ msg: "Invalid or expired refresh token" });
+        console.log(err);
+        res.status(500).json({ msg: "Server Error" });
     }
 };
+*/
+
+
 
 
