@@ -7,20 +7,44 @@ import path from "path";
 import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
 import { sendPasswordAfterVerification as sendDriverPassword } from "./driver.controller.js";
 
+// Generate JWT tokens
 const generateRefreshToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: "7d" });
 };
 
+// Generate Access Token
 const generateAccessToken = (userId) => {
     return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
+// Refresh Access Token
+export const refreshAccessToken = async (req, res) => {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+        return res.status(401).json({ msg: "No refresh token provided" });
+    }
+    try {
+    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+        const user = await User.findById(payload.id);
+        if (!user || user.refreshToken !== refreshToken) {
+            return res.status(403).json({ msg: "Invalid refresh token" });
+        }
+        const newAccessToken = generateAccessToken(user._id);
+        res.json({ token: newAccessToken });
+    } catch (err) {
+        return res.status(403).json({ msg: "Invalid or expired refresh token" });
+    }
+};
+
+// In-memory token blacklist
 export const blacklistedTokens = new Set();
 
+// Generate a 6-digit verification code
 export const generateVerificationCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+// Send verification code via email
 export const sendVerificationCode = async (email, code) => {
     const mailOptions = {
         ...defaultMailOptions,
@@ -70,7 +94,7 @@ export const sendVerificationCode = async (email, code) => {
                 </tr>
                 <tr>
                     <td style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                        <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                     </td>
                 </tr>
             </table>
@@ -80,6 +104,7 @@ export const sendVerificationCode = async (email, code) => {
     await transporter.sendMail(mailOptions);
 };
 
+// Verify email using verification link
 export const verifyEmail = async (req, res) => {
     const { token } = req.params;
 
@@ -112,12 +137,27 @@ export const verifyEmail = async (req, res) => {
     }
 };
 
+// Create new user account
 export const registerUser = async (req, res) => {
     const { name, email, phone, password, role } = req.body;
 
     
     if (!name || !email || !phone || !password || !role) {
         return res.status(400).json({ msg: "Please fill in all fields." });
+    }
+
+    const validateEmail = (email) => /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+    if (!validateEmail(email)) {
+        return res.status(400).json({ msg: "Invalid email format." });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ msg: "Password must be at least 6 characters long." });
+    }
+
+    const validatePhone = (phone) => /^0\d{9}$/.test(phone);
+    if (!validatePhone(phone)) {
+        return res.status(400).json({ msg: "Invalid phone number format." });
     }
 
     try {
@@ -169,7 +209,7 @@ export const registerUser = async (req, res) => {
                     </div>
                     
                     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                        <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                     </div>
                 </div>
             `
@@ -187,6 +227,7 @@ export const registerUser = async (req, res) => {
     }
 };
 
+// User Login to the system
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
@@ -268,15 +309,18 @@ export const loginUser = async (req, res) => {
     }
 };
 
-
+// User Logout from the system
 export const logoutUser = async (req, res) => {
     try {
         const refreshToken = req.cookies.refreshToken;
+        const token = req.headers.authorization?.split(" ")[1];
+
         if (refreshToken) {
             const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
             await User.findByIdAndUpdate(decoded.id, { $unset: { refreshToken: "" } });
         }
 
+        blacklistedTokens.add(token);
         res.clearCookie("accessToken");
         res.clearCookie("refreshToken");
         localStorage.clear();
@@ -286,6 +330,7 @@ export const logoutUser = async (req, res) => {
     }
 }  
 
+// Forgot Password - Send Reset Link
 export const forgotPassword = async (req, res) => {
     const { email } = req.body;
 
@@ -302,7 +347,7 @@ export const forgotPassword = async (req, res) => {
         const mailOptions = {
             ...defaultMailOptions,
             to: user.email,
-            subject: "Password Reset Request - Agri-Waste Marketplace",
+            subject: "Password Reset Request - Ramanayake Travels",
             html: `
                 <table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <tr>
@@ -348,7 +393,7 @@ export const forgotPassword = async (req, res) => {
                     </tr>
                     <tr>
                         <td style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                            <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
+                            <p style="color: #7f8c8d; font-size: 12px;">© 2025 Ramanayake Travels. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>
@@ -364,6 +409,7 @@ export const forgotPassword = async (req, res) => {
     }
 };
 
+// Reset Password using the token
 export const resetPassword = async (req, res) => {
     const { token } = req.params;
     const { password } = req.body;
@@ -393,58 +439,7 @@ export const resetPassword = async (req, res) => {
     }
 };
 
-export const verifyTwoStepCode = async (req, res) => {
-    const { userId, code } = req.body;
-
-    try {
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ msg: "User not found" });
-        }
-
-        if (
-            user.twoStepVerificationCode === code &&
-            user.twoStepVerificationExpire > Date.now()
-        ) {
-            user.twoStepVerificationCode = undefined;
-            user.twoStepVerificationExpire = undefined;
-            await user.save();
-
-            const token = jwt.sign(
-                { id: user._id, role: user.role },
-                process.env.JWT_SECRET,
-                { expiresIn: "1d" }
-            );
-
-            // Return a single response with all necessary data
-            res.json({ 
-                token, 
-                user: { 
-                    _id: user._id,
-                    name: user.name, 
-                    email: user.email, 
-                    phone: user.phone,
-                    role: user.role,
-                    profilePic: user.profilePic,
-                    isVerified: user.isVerified,
-                    twoFactorEnabled: user.twoFactorEnabled,
-                    createdAt: user.createdAt
-                } 
-            });
-
-            user.isVerified = true;
-            await user.save();
-
-        } else {
-            res.status(400).json({ msg: "Invalid or expired verification code" });
-        }
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ msg: "Server Error" });
-    }
-};
-
+// Get all users (admin only)
 export const getUsers = async (req, res) => {
     try {
         const users = await User.find({});
@@ -456,6 +451,7 @@ export const getUsers = async (req, res) => {
     }
 };
 
+// Get user by ID
 export const getUserById = async (req, res) => {
     const { id } = req.params;
 
@@ -469,6 +465,7 @@ export const getUserById = async (req, res) => {
     }
 };
 
+// Update user details
 export const updateUserDetails = async (req, res) => {
     const { id } = req.params;
 
@@ -548,24 +545,7 @@ export const updateUserDetails = async (req, res) => {
     }
 };
 
-export const updateSecurityTimestamp = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const user = await User.findByIdAndUpdate(
-            id,
-            { lastSecurityUpdate: new Date() },
-            { new: true }
-        );
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        res.status(200).json({ message: "Security timestamp updated", lastSecurityUpdate: user.lastSecurityUpdate });
-    } catch (err) {
-        console.error("Error updating security timestamp:", err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
+// Change user password
 export const changePassword = async (req, res) => {
     const { id } = req.params;
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
@@ -598,235 +578,4 @@ export const changePassword = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
-
-export const deleteUser = async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        const user = await User.findById(id);
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        
-        if (user.isVerified === false) {
-            // Store user email before deletion
-            const userEmail = user.email;
-            const userName = user.name;
-            
-            // Delete user from database
-            const result = await User.findByIdAndDelete(id);
-            
-            if (!result) {
-                return res.status(404).json({ message: "User not found" });
-            }
-
-            // Send deletion email notification
-            const mailOptions = {
-                ...defaultMailOptions,
-                to: userEmail,
-                subject: "Account Deletion Notice - Agri-Waste Marketplace",
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                        <div style="text-align: center; margin-bottom: 30px;">
-                            <h1 style="color: #2c3e50; margin-bottom: 10px;">Account Deletion Notice</h1>
-                        </div>
-                        
-                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
-                            <p style="color: #34495e; margin-bottom: 20px;">Dear ${userName},</p>
-                            
-                            <p style="color: #34495e;">We regret to inform you that your account has been deleted from the Agri-Waste Marketplace platform.</p>
-                            
-                            <p style="color: #34495e;">If you wish to continue using our services, you can register a new account by clicking the button below:</p>
-                            
-                            <div style="text-align: center; margin: 30px 0;">
-                                <a href="http://localhost:5173/register" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Register with Us</a>
-                            </div>
-                            
-                            <p style="color: #34495e;">We look forward to having you back in our community!</p>
-                        </div>
-                        
-                        <div style="text-align: center; color: #7f8c8d; font-size: 14px;">
-                            <p>This is an automated message. Please do not reply to this email.</p>
-                        </div>
-                        
-                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                            <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
-                        </div>
-                    </div>
-                `
-            };
-
-            await transporter.sendMail(mailOptions);
-            
-            return res.status(200).json({ message: "User deleted successfully" });
-        }
-
-        // If user is verified, deactivate their account instead of deleting
-        user.isVerified = false;
-        user.twoFactorEnabled = true;
-        await user.save();
-
-        // Send deactivation email notification
-        const mailOptions = {
-            ...defaultMailOptions,
-            to: user.email,
-            subject: "Account Deactivation Notice - Agri-Waste Marketplace",
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <h1 style="color: #2c3e50; margin-bottom: 10px;">Account Deactivation Notice</h1>
-                    </div>
-                    
-                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin-bottom: 30px;">
-                        <p style="color: #34495e; margin-bottom: 20px;">Dear ${user.name},</p>
-                        
-                        <p style="color: #34495e;">We regret to inform you that your account has been deactivated. This means you will no longer have access to the Agri-Waste Marketplace platform.</p>
-                        
-                        <p style="color: #34495e;">If you wish to reactivate your account, please login to your account using the button below:</p>
-                        
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="http://localhost:5173/login" style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Login into your Account</a>
-                        </div>
-                        
-                        <p style="color: #34495e;">We look forward to having you back in our community!</p>
-                    </div>
-                    
-                    <div style="text-align: center; color: #7f8c8d; font-size: 14px;">
-                        <p>This is an automated message. Please do not reply to this email.</p>
-                    </div>
-                    
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                        <p style="color: #7f8c8d; font-size: 12px;">© 2024 Agri-Waste Marketplace. All rights reserved.</p>
-                    </div>
-                </div>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-
-        return res.status(200).json({ message: "User account deactivated successfully" });
-
-    } catch (err) {
-        console.error("Error in deleteUser:", err);
-        res.status(500).json({ message: err.message });
-    }
-};
-
-export const getLoginHistory = async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('loginHistory');
-        if (!user) {
-            return res.status(404).json({ msg: "User not found" });
-        }
-
-        // Sort login history by timestamp in descending order (most recent first)
-        const sortedHistory = user.loginHistory.sort((a, b) => b.timestamp - a.timestamp);
-        
-        res.json({ loginHistory: sortedHistory });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ msg: "Server Error" });
-    }
-};
-
-export const toggleTwoFactorAuth = async (req, res) => {
-  try {
-    const { enable } = req.body;
-    const userId = req.user.id;
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ msg: "User not found" });
-    }
-
-    // Record the 2FA toggle in login history
-    user.loginHistory.push({
-      ipAddress: req.ip,
-      deviceInfo: req.headers['user-agent'],
-      status: "success",
-      action: `Two-factor authentication ${enable ? 'enabled' : 'disabled'}`
-    });
-
-    user.twoFactorEnabled = enable;
-    user.lastSecurityUpdate = new Date();
-    await user.save();
-
-    res.json({ 
-      msg: `Two-factor authentication ${enable ? 'enabled' : 'disabled'} successfully`,
-      twoFactorEnabled: user.twoFactorEnabled 
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ msg: "Server Error" });
-  }
-};
-
-export const exportUsers = async (req, res) => {
-    try {
-        const users = await User.find({}).select('name email phone role isVerified createdAt loginHistory');
-
-        // CSV Header
-        const csvHeader = 'Name,Email,Phone,Role,Verification Status,Created At,Last Login\n';
-
-        // CSV Rows
-        const csvRows = users.map(user => {
-            // Get most recent successful login
-            const lastLogin = user.loginHistory && user.loginHistory.length > 0
-                ? user.loginHistory
-                    .filter(login => login.status === 'success')
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]
-                : null;
-
-            // Role Formatting
-            const role =
-                user.role === 'farmer' ? 'Farmer' :
-                user.role === 'buyer' ? 'Buyer' :
-                user.role === 'truck_driver' ? 'Truck Driver' :
-                'ADMIN';
-
-            return [
-                `"${user.name || ''}"`,
-                `"${user.email || ''}"`,
-                `"${user.phone || ''}"`,
-                `"${role}"`,
-                `"${user.isVerified ? 'Verified' : 'Unverified'}"`,
-                `"${new Date(user.createdAt).toLocaleString()}"`,
-                `"${lastLogin ? new Date(lastLogin.timestamp).toLocaleString() : 'Never'}"`
-            ].join(',');
-        }).join('\n');
-
-        const csvContent = csvHeader + csvRows;
-
-        // Set Headers for download
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename=users.csv');
-
-        // Send the file
-        res.send(csvContent);
-
-    } catch (err) {
-        console.error('Error exporting users:', err);
-        res.status(500).json({ message: 'Error exporting users' });
-    }
-};
-
-export const refreshAccessToken = async (req, res) => {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-        return res.status(401).json({ msg: "No refresh token provided" });
-    }
-    try {
-    const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-        const user = await User.findById(payload.id);
-        if (!user || user.refreshToken !== refreshToken) {
-            return res.status(403).json({ msg: "Invalid refresh token" });
-        }
-        const newAccessToken = generateAccessToken(user._id);
-        res.json({ token: newAccessToken });
-    } catch (err) {
-        return res.status(403).json({ msg: "Invalid or expired refresh token" });
-    }
-};
-
 

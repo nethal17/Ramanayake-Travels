@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.model.js';
 import { blacklistedTokens } from "../controllers/user.controller.js";
 
+// Middleware to check if user is authenticated
 export async function isAuthenticated(req, res, next) {
   try {
     console.log('Authentication middleware called');
@@ -61,6 +62,7 @@ export async function isAuthenticated(req, res, next) {
   }
 }
 
+// Middleware to check if user is admin
 export function isAdmin(req, res, next) {
   // Check if user exists and has admin role
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
@@ -70,6 +72,7 @@ export function isAdmin(req, res, next) {
   next();
 }
 
+// Middleware to check if user is driver
 export function isDriver(req, res, next) {
   // Check if user exists and has driver role
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
@@ -86,10 +89,6 @@ export function isDriver(req, res, next) {
   next();
 }
 
-// Aliases for backward compatibility
-export const protectRoute = isAuthenticated;
-export const adminRoute = isAdmin;
-
 // Generic role-based authorization middleware
 export function authorizeRoles(...roles) {
   return (req, res, next) => {
@@ -100,4 +99,8 @@ export function authorizeRoles(...roles) {
     next();
   };
 }
+
+// Export middleware functions
+export const protectRoute = isAuthenticated;
+export const adminRoute = isAdmin;
 

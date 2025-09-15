@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 // Prefer explicit host/port from env; fallback to Gmail service
 const useHostBased = Boolean(process.env.EMAIL_HOST) && Boolean(process.env.EMAIL_PORT);
 
+// Create reusable transporter object using SMTP transport
 const transporter = nodemailer.createTransport(
 	useHostBased
 		? {
@@ -25,6 +26,7 @@ const transporter = nodemailer.createTransport(
 			}
 );
 
+// Default mail options
 const defaultMailOptions = {
 	from: process.env.EMAIL_USER
 };
