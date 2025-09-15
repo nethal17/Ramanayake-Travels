@@ -268,53 +268,6 @@ export const loginUser = async (req, res) => {
     }
 };
 
-/*export const logoutUser = async (req, res) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!token && !refreshToken) {
-        console.log("Logout failed: No token or refresh token provided");
-        return res.status(400).json({ message: "No token or refresh token provided" });
-    }
-
-    if (token && blacklistedTokens.has(token)) {
-        return res.status(401).json({ msg: "You are already logged out. Please log in." });
-    }
-
-    try {
-        if (token) {
-            // Add access token to blacklist
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            blacklistedTokens.add(token);
-        }
-
-        if (refreshToken) {
-            // Remove refresh token from user document
-            const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-            await User.findByIdAndUpdate(payload.id, { $unset: { refreshToken: "" } });
-            res.clearCookie("refreshToken", {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-            });
-        }
-
-        res.status(200).json({ message: "Logged out successfully" });
-    } catch (err) {
-        console.error("Logout error:", err);
-
-        if (err.name === "JsonWebTokenError") {
-            return res.status(401).json({ msg: "Invalid token" });
-        }
-
-        if (err.name === "TokenExpiredError") {
-            return res.status(401).json({ msg: "Token has expired" });
-        }
-
-        res.status(500).json({ msg: "Server Error" });
-    }
-}; */
 
 export const logoutUser = async (req, res) => {
     try {

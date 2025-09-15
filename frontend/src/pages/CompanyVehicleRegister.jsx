@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AdminNavbar } from '../components/AdminNavbar';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
-import { FaSpinner, FaCar, FaGasPump, FaChair, FaDoorOpen, FaCogs } from 'react-icons/fa';
+import { FaSpinner, FaCar, FaGasPump, FaChair, FaDoorOpen, FaCogs, FaExclamationTriangle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ const CompanyVehicleRegister = () => {
   const navigate = useNavigate();
   const { getAuthHeaders, user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [urlError, setUrlError] = useState('');
   const [formData, setFormData] = useState({
     make: '',
     model: '',
@@ -25,6 +26,17 @@ const CompanyVehicleRegister = () => {
     ownership: 'Company', // Set to Company by default
     status: 'available'
   });
+  
+  // Function to validate URL format
+  const isValidUrl = (url) => {
+    if (!url) return true; // Empty URL is considered valid (not required)
+    try {
+      new URL(url);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -52,19 +64,35 @@ const CompanyVehicleRegister = () => {
         ...prev,
         [name]: value
       }));
+      
+      // Validate URL when imageUrl field changes
+      if (name === 'imageUrl') {
+        if (value && !isValidUrl(value)) {
+          setUrlError('Please enter a valid URL (e.g., https://example.com/image.jpg)');
+        } else {
+          setUrlError('');
+        }
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate URL before submission
+    if (formData.imageUrl && !isValidUrl(formData.imageUrl)) {
+      setUrlError('Please enter a valid URL (e.g., https://example.com/image.jpg)');
+      toast.error('Please fix the invalid image URL');
+      return;
+    }
+    
     try {
       setLoading(true);
       
-      // Create the vehicle data object
+     
       const vehicleData = {
         ...formData,
-        ownerId: user._id, // Company vehicles are owned by the admin who created them
+        ownerId: user._id, 
         price: Number(formData.price),
         year: Number(formData.year)
       };
@@ -157,9 +185,15 @@ const CompanyVehicleRegister = () => {
                     name="imageUrl"
                     value={formData.imageUrl}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={`mt-1 block w-full border ${urlError ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                     placeholder="https://example.com/image.jpg"
                   />
+                  {urlError && (
+                    <div className="mt-1 text-sm text-red-600 flex items-center">
+                      <FaExclamationTriangle className="mr-1" />
+                      {urlError}
+                    </div>
+                  )}
                 </div>
                 
                 <div>

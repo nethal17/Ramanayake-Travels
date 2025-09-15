@@ -22,7 +22,6 @@ export const createDriver = async (req, res) => {
     try {
         const { name, email, age, address, phone } = req.body;
 
-        // Check if user already exists
         const existingUser = await User.findOne({ 
             $or: [{ email }, { phone }] 
         });
@@ -34,7 +33,6 @@ export const createDriver = async (req, res) => {
             });
         }
 
-        // Check if files are uploaded
         if (!req.files || !req.files.frontLicense || !req.files.backLicense) {
             return res.status(400).json({
                 success: false,
@@ -42,12 +40,10 @@ export const createDriver = async (req, res) => {
             });
         }
 
-        // Generate auto password and verification token
         const autoPassword = generatePassword();
         const hashedPassword = await bcrypt.hash(autoPassword, 12);
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
-        // Create user
         const user = new User({
             name,
             email,
@@ -60,7 +56,6 @@ export const createDriver = async (req, res) => {
 
         const savedUser = await user.save();
 
-        // Create driver details
         const driver = new Driver({
             userId: savedUser._id,
             age: parseInt(age),
@@ -73,7 +68,6 @@ export const createDriver = async (req, res) => {
 
         await driver.save();
 
-        // Send verification email
         const verificationLink = `http://localhost:5001/api/auth/verify-email/${verificationToken}`;
         
         const emailContent = `
@@ -96,7 +90,6 @@ export const createDriver = async (req, res) => {
             html: emailContent
         });
 
-        // Store auto-generated password temporarily (you might want to encrypt this)
         savedUser.twoStepVerificationCode = autoPassword;
         await savedUser.save();
 
@@ -213,7 +206,6 @@ export const updateDriver = async (req, res) => {
         const { id } = req.params;
         const { name, email, age, address, phone } = req.body;
 
-        // Find the driver
         const driver = await Driver.findById(id).populate('userId');
         if (!driver) {
             return res.status(404).json({
@@ -222,11 +214,10 @@ export const updateDriver = async (req, res) => {
             });
         }
 
-        // Check if email or phone is being changed and already exists for another user
         if (email !== driver.userId.email || phone !== driver.userId.phone) {
             const existingUser = await User.findOne({
                 $and: [
-                    { _id: { $ne: driver.userId._id } }, // Exclude current user
+                    { _id: { $ne: driver.userId._id } },
                     { $or: [{ email }, { phone }] }
                 ]
             });
@@ -239,16 +230,13 @@ export const updateDriver = async (req, res) => {
             }
         }
 
-        // Prepare update data for driver
         const driverUpdateData = {
             age: parseInt(age),
             address
         };
 
-        // Handle license image updates
         if (req.files) {
             if (req.files.frontLicense && req.files.frontLicense[0]) {
-                // Delete old front image if it exists
                 if (driver.drivingLicense.frontImage) {
                     const oldFrontPath = path.join(process.cwd(), 'uploads', driver.drivingLicense.frontImage);
                     if (fs.existsSync(oldFrontPath)) {
@@ -259,7 +247,6 @@ export const updateDriver = async (req, res) => {
             }
 
             if (req.files.backLicense && req.files.backLicense[0]) {
-                // Delete old back image if it exists
                 if (driver.drivingLicense.backImage) {
                     const oldBackPath = path.join(process.cwd(), 'uploads', driver.drivingLicense.backImage);
                     if (fs.existsSync(oldBackPath)) {
@@ -270,14 +257,12 @@ export const updateDriver = async (req, res) => {
             }
         }
 
-        // Update user details
         await User.findByIdAndUpdate(
             driver.userId._id,
             { name, email, phone },
             { new: true, runValidators: true }
         );
 
-        // Update driver details
         const updatedDriver = await Driver.findByIdAndUpdate(
             id,
             driverUpdateData,
@@ -313,7 +298,6 @@ export const deleteDriver = async (req, res) => {
             });
         }
 
-        // Delete license images
         const frontImagePath = path.join(process.cwd(), 'uploads', driver.drivingLicense.frontImage);
         const backImagePath = path.join(process.cwd(), 'uploads', driver.drivingLicense.backImage);
         
@@ -323,10 +307,8 @@ export const deleteDriver = async (req, res) => {
             }
         });
 
-        // Delete driver record
         await Driver.findByIdAndDelete(id);
         
-        // Delete user record
         await User.findByIdAndDelete(driver.userId);
 
         res.status(200).json({
@@ -351,7 +333,7 @@ export const sendPasswordAfterVerification = async (userId) => {
             return;
         }
 
-        const password = user.twoStepVerificationCode; // Retrieve the stored password
+        const password = user.twoStepVerificationCode;
         
         const emailContent = `
             <h2>Your Login Credentials - Ramanayake Travels</h2>
@@ -374,7 +356,6 @@ export const sendPasswordAfterVerification = async (userId) => {
             html: emailContent
         });
 
-        // Clear the temporary password
         user.twoStepVerificationCode = null;
         await user.save();
 
@@ -386,12 +367,10 @@ export const sendPasswordAfterVerification = async (userId) => {
 // Get driver profile - for driver users to see their own profile
 export const getDriverProfile = async (req, res) => {
     try {
-        // Get the logged-in driver's ID
         const userId = req.user._id;
         
         console.log('Getting driver profile for user:', userId);
         
-        // Find driver details by userId
         const driver = await Driver.findOne({ userId });
         
         if (!driver) {
@@ -421,10 +400,8 @@ export const getDriverProfile = async (req, res) => {
 // Update driver availability
 export const updateDriverAvailability = async (req, res) => {
     try {
-        // Get the logged-in driver's ID
         const userId = req.user._id;
         
-        // Get availability from request body
         const { availability } = req.body;
         
         if (typeof availability !== 'boolean') {
@@ -434,7 +411,6 @@ export const updateDriverAvailability = async (req, res) => {
             });
         }
         
-        // Find and update driver availability
         const driver = await Driver.findOneAndUpdate(
             { userId },
             { availability },

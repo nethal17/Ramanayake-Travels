@@ -86,11 +86,22 @@ const ScheduleMaintenance = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  // No need to check userId for createdBy anymore
+    // No need to check userId for createdBy anymore
     if (!formData.vehicleId) {
       toast.error('Please select a vehicle.');
       return;
     }
+    
+    // Validate that scheduled date is not in the past
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset time part for date comparison
+    const scheduledDate = new Date(formData.scheduledDate);
+    
+    if (scheduledDate < currentDate) {
+      toast.error('Scheduled date cannot be in the past.');
+      return;
+    }
+    
     setLoading(true);
     try {
       // Prepare payload with correct fields
@@ -167,9 +178,13 @@ const ScheduleMaintenance = () => {
             name="scheduledDate"
             value={formData.scheduledDate}
             onChange={handleInputChange}
+            min={new Date().toISOString().split('T')[0]} // Set minimum date to today
             className="w-full px-3 py-2 border rounded-md"
             required
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Maintenance cannot be scheduled for a past date.
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Description</label>
@@ -184,7 +199,7 @@ const ScheduleMaintenance = () => {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Estimated Cost ($)</label>
+          <label className="block text-sm font-medium mb-1">Estimated Cost (Rs)</label>
           <input
             type="number"
             name="cost"

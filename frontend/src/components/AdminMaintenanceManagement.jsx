@@ -77,8 +77,12 @@ const AdminMaintenanceManagement = () => {
 
   const fetchVehicles = async () => {
     try {
-      const response = await api.get('/vehicles', {
-        withCredentials: true
+      // Use the specific endpoint for company vehicles as defined in your backend routes
+      const response = await api.get('/vehicles/admin/company', {
+        withCredentials: true,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       // Log response for debugging
@@ -89,26 +93,27 @@ const AdminMaintenanceManagement = () => {
       
       if (response.data) {
         if (Array.isArray(response.data)) {
-          // Direct array response
+          // Direct array response - this is the expected format from /vehicles/admin/company
+          // The controller returns Vehicle.find({ ownership: 'Company' })
           vehiclesArray = response.data;
-        } else if (response.data.success && Array.isArray(response.data.data)) {
-          // Success with data array
+          console.log('Found array of vehicles directly in response.data:', vehiclesArray.length);
+        } else if (Array.isArray(response.data.data)) {
+          // Response with data array
           vehiclesArray = response.data.data;
+          console.log('Found array of vehicles in response.data.data:', vehiclesArray.length);
         } else if (Array.isArray(response.data.vehicles)) {
           // Alternative shape with vehicles array
           vehiclesArray = response.data.vehicles;
+          console.log('Found array of vehicles in response.data.vehicles:', vehiclesArray.length);
+        } else {
+          console.log('Unexpected response format:', response.data);
         }
         
-        // Filter company vehicles regardless of response shape
-        const companyVehicles = vehiclesArray.filter(vehicle => 
-          vehicle.ownership === 'Company'
-        );
+        setVehicles(vehiclesArray || []);
         
-        setVehicles(companyVehicles || []);
-        
-        if (companyVehicles.length === 0) {
-          console.log('No company vehicles found in:', vehiclesArray);
-          toast.warning('No company vehicles found');
+        if (vehiclesArray.length === 0) {
+          console.log('No company vehicles found in the database');
+          toast('No company vehicles found', { icon: '⚠️' });
         }
       } else {
         toast.error('No data received from vehicles API');
@@ -116,6 +121,14 @@ const AdminMaintenanceManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);
+      if (error.response) {
+        console.log('Error response data:', error.response.data);
+        console.log('Error response status:', error.response.status);
+      } else if (error.request) {
+        console.log('No response received:', error.request);
+      } else {
+        console.log('Error setting up request:', error.message);
+      }
       toast.error(error.response?.data?.message || 'Error loading vehicles');
       setVehicles([]);
     }
@@ -661,11 +674,11 @@ const AdminMaintenanceManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        Est: ${record.cost?.toFixed(2) || record.estimatedCost?.toFixed(2) || '0.00'}
+                        Est: Rs {record.cost?.toFixed(2) || record.estimatedCost?.toFixed(2) || '0.00'}
                       </div>
                       {record.actualCost && (
                         <div className="text-xs text-gray-500">
-                          Actual: ${record.actualCost.toFixed(2)}
+                          Actual: Rs {record.actualCost.toFixed(2)}
                         </div>
                       )}
                     </td>
@@ -812,7 +825,7 @@ const AdminMaintenanceManagement = () => {
                         
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Estimated Cost ($)
+                            Estimated Cost (Rs)
                           </label>
                           <input
                             type="number"
@@ -990,19 +1003,19 @@ const AdminMaintenanceManagement = () => {
                         <div className="bg-white p-3 rounded border border-gray-200 grid grid-cols-2 md:grid-cols-4 gap-3">
                           <div>
                             <p className="text-xs text-gray-500">Parts Cost</p>
-                            <p className="font-medium">${selectedMaintenance.partsCost ? selectedMaintenance.partsCost.toFixed(2) : '0.00'}</p>
+                            <p className="font-medium">Rs {selectedMaintenance.partsCost ? selectedMaintenance.partsCost.toFixed(2) : '0.00'}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Labor Cost</p>
-                            <p className="font-medium">${selectedMaintenance.laborCost ? selectedMaintenance.laborCost.toFixed(2) : '0.00'}</p>
+                            <p className="font-medium">Rs {selectedMaintenance.laborCost ? selectedMaintenance.laborCost.toFixed(2) : '0.00'}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Additional Costs</p>
-                            <p className="font-medium">${selectedMaintenance.additionalCosts ? selectedMaintenance.additionalCosts.toFixed(2) : '0.00'}</p>
+                            <p className="font-medium">Rs {selectedMaintenance.additionalCosts ? selectedMaintenance.additionalCosts.toFixed(2) : '0.00'}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">Total Cost</p>
-                            <p className="font-medium text-lg text-green-600">${selectedMaintenance.actualCost ? selectedMaintenance.actualCost.toFixed(2) : '0.00'}</p>
+                            <p className="font-medium text-lg text-green-600">Rs {selectedMaintenance.actualCost ? selectedMaintenance.actualCost.toFixed(2) : '0.00'}</p>
                           </div>
                         </div>
                       </div>

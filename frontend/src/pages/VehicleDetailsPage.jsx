@@ -8,7 +8,9 @@ import {
   FaMoneyBillWave, 
   FaUser, 
   FaMapMarkerAlt, 
-  FaCheckCircle 
+  FaCheckCircle,
+  FaChevronDown,
+  FaChevronUp 
 } from 'react-icons/fa';
 import ReservationForm from '../components/ReservationForm';
 
@@ -17,6 +19,7 @@ const VehicleDetailsPage = () => {
   const [vehicle, setVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showReservationForm, setShowReservationForm] = useState(false);
 
   useEffect(() => {
     const fetchVehicleDetails = async () => {
@@ -88,12 +91,12 @@ const VehicleDetailsPage = () => {
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {/* Vehicle Image */}
-        <div className="w-full h-64 md:h-80 bg-gray-200 relative">
+        <div className="w-full md:w-2/3 mx-auto h-48 md:h-64 bg-gray-200 relative">
           {vehicle.imageUrl ? (
             <img 
               src={vehicle.imageUrl} 
               alt={`${vehicle.make} ${vehicle.model}`} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -160,7 +163,23 @@ const VehicleDetailsPage = () => {
           {/* Book Now Button */}
           {vehicle.status === 'available' && (
             <div className="mt-8">
-              <ReservationForm vehicle={vehicle} />
+              <button
+                onClick={() => setShowReservationForm(!showReservationForm)}
+                className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md flex items-center justify-center w-full md:w-auto"
+              >
+                {showReservationForm ? 'Hide Booking Form' : 'Book Now'}
+                {showReservationForm ? (
+                  <FaChevronUp className="ml-2" />
+                ) : (
+                  <FaChevronDown className="ml-2" />
+                )}
+              </button>
+              
+              {showReservationForm && (
+                <div className="mt-6 p-4 border border-gray-200 rounded-md bg-gray-50">
+                  <ReservationForm vehicle={vehicle} />
+                </div>
+              )}
             </div>
           )}
         </div>

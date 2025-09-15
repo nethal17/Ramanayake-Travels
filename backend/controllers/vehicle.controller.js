@@ -3,6 +3,7 @@ import Vehicle from '../models/vehicle.model.js';
 import path from 'path';
 import fs from 'fs';
 
+//Register a Vehicle
 export async function registerVehicle(req, res) {
   try {
     const { 
@@ -19,19 +20,14 @@ export async function registerVehicle(req, res) {
       ownerId: explicitOwnerId 
     } = req.body;
     
-    // Try to get owner ID from authenticated user or from request body
+
     let ownerId;
     
     if (req.user && req.user._id) {
-      // Preferred: Get owner ID from authenticated user
       ownerId = req.user._id;
-      console.log('Using authenticated user ID:', ownerId);
     } else if (explicitOwnerId) {
-      // Fallback: Use owner ID provided in request body
       ownerId = explicitOwnerId;
-      console.log('Using explicitly provided owner ID:', ownerId);
     } else {
-      // Error: No owner ID available
       return res.status(401).json({ error: 'Owner ID not available. Please login again.' });
     }
     
@@ -59,7 +55,7 @@ export async function registerVehicle(req, res) {
     res.status(201).json({ 
       message: 'Vehicle registered successfully', 
       vehicle,
-      ownerId: ownerId // Include owner ID in response for confirmation
+      ownerId: ownerId 
     });
   } catch (err) {
     console.error('Error registering vehicle:', err);
@@ -69,11 +65,12 @@ export async function registerVehicle(req, res) {
 
 // Admin endpoints
 
+//Get all vehicle Application
 export async function getAllVehicleApplications(req, res) {
   try {
     const applications = await VehicleApplication.find()
-      .populate('owner', 'name email') // Get owner details
-      .sort({ createdAt: -1 }); // Sort by date (newest first)
+      .populate('owner', 'name email')
+      .sort({ createdAt: -1 }); 
     
     res.status(200).json(applications);
   } catch (err) {
@@ -81,6 +78,7 @@ export async function getAllVehicleApplications(req, res) {
   }
 }
 
+//Get Vehicle by Application ID
 export async function getVehicleApplicationById(req, res) {
   try {
     const application = await VehicleApplication.findById(req.params.id)
@@ -96,21 +94,21 @@ export async function getVehicleApplicationById(req, res) {
   }
 }
 
+// Approve Vehicle Application
 export async function approveVehicleApplication(req, res) {
   try {
-    // First find the application without populate to make sure we have the raw owner ID
+
     const application = await VehicleApplication.findById(req.params.id);
     
     if (!application) {
       return res.status(404).json({ message: 'Vehicle application not found' });
     }
     
-    // Check if owner is valid
+    
     if (!application.owner) {
       return res.status(400).json({ message: 'Vehicle application has no valid owner' });
     }
     
-    // Update application status
     application.status = 'approved';
     await application.save();
     
@@ -122,16 +120,14 @@ export async function approveVehicleApplication(req, res) {
       price: application.price,
       description: application.description,
       imageUrl: application.imageUrl,
-      // Include new fields
       fuelType: application.fuelType,
       seats: application.seats,
       doors: application.doors,
       transmission: application.transmission,
       extraOptions: application.extraOptions,
-      // Set ownership and IDs
-      ownership: 'Customer',  // Set ownership to Customer
-      ownerId: application.owner,  // Store the customer's ID directly from the application
-      applicationId: application._id,  // Reference back to the original application
+      ownership: 'Customer',  
+      ownerId: application.owner,  
+      applicationId: application._id,  
       status: 'available'
     });
     
@@ -148,6 +144,7 @@ export async function approveVehicleApplication(req, res) {
   }
 }
 
+//Reject Application
 export async function rejectVehicleApplication(req, res) {
   try {
     const application = await VehicleApplication.findById(req.params.id);
@@ -168,7 +165,7 @@ export async function rejectVehicleApplication(req, res) {
   }
 }
 
-// Direct Vehicle Management (without application process)
+// Register a vehicle for admin
 
 export async function createVehicle(req, res) {
   try {
@@ -188,18 +185,14 @@ export async function createVehicle(req, res) {
       status, 
       ownerId: explicitOwnerId 
     } = req.body;
-    
-    // Try to get owner ID from authenticated user or from request body
+
     let ownerId;
     
     if (req.user && req.user._id) {
-      // Preferred: Get owner ID from authenticated user
       ownerId = req.user._id;
     } else if (explicitOwnerId) {
-      // Fallback: Use owner ID provided in request body
       ownerId = explicitOwnerId;
     } else {
-      // For company vehicles, admin becomes the owner
       ownerId = req.user._id;
     }
     
@@ -231,6 +224,7 @@ export async function createVehicle(req, res) {
   }
 }
 
+// Get all vehicles
 export async function getAllVehicles(req, res) {
   try {
     const vehicles = await Vehicle.find()
@@ -243,6 +237,7 @@ export async function getAllVehicles(req, res) {
   }
 }
 
+//Get vehicles by ID
 export async function getVehicleById(req, res) {
   try {
     const vehicle = await Vehicle.findById(req.params.id)
@@ -258,6 +253,7 @@ export async function getVehicleById(req, res) {
   }
 }
 
+// Update Vehicle
 export async function updateVehicle(req, res) {
   try {
     const { make, model, year, price, description, imageUrl, status } = req.body;
@@ -290,6 +286,7 @@ export async function updateVehicle(req, res) {
   }
 }
 
+// Delete Vehicle
 export async function deleteVehicle(req, res) {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
@@ -308,7 +305,31 @@ export async function deleteVehicle(req, res) {
   }
 }
 
-// Functions migrated from fleet controller
+// Get company owned vehicles for admin
+export async function getCompanyVehicles(req, res) {
+  try {
+    const vehicles = await Vehicle.find({ ownership: 'Company' })
+      .sort({ createdAt: -1 });
+    
+    res.status(200).json(vehicles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+// Get customer owned vehicles for admin
+export async function getCustomerVehicles(req, res) {
+  try {
+    const vehicles = await Vehicle.find({ ownership: 'Customer' })
+      .sort({ createdAt: -1 })
+      .populate('ownerId', 'name email');
+    
+    res.status(200).json(vehicles);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 
 // Get all available vehicles for customers
 export async function getAllAvailableVehicles(req, res) {
@@ -369,27 +390,4 @@ export async function searchVehicles(req, res) {
   }
 }
 
-// Get company owned vehicles for admin
-export async function getCompanyVehicles(req, res) {
-  try {
-    const vehicles = await Vehicle.find({ ownership: 'Company' })
-      .sort({ createdAt: -1 });
-    
-    res.status(200).json(vehicles);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}
 
-// Get customer owned vehicles for admin
-export async function getCustomerVehicles(req, res) {
-  try {
-    const vehicles = await Vehicle.find({ ownership: 'Customer' })
-      .sort({ createdAt: -1 })
-      .populate('ownerId', 'name email');
-    
-    res.status(200).json(vehicles);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-}

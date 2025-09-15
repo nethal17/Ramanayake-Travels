@@ -14,7 +14,8 @@ import {
   RiSteering2Line,
   RiAddCircleLine,
   RiToolsLine,
-  RiSettings3Line
+  RiSettings3Line,
+  RiErrorWarningLine
 } from 'react-icons/ri';
 import { Avatar } from './Avatar';
 import toast from 'react-hot-toast';
@@ -64,6 +65,7 @@ export const AdminNavbar = () => {
   const navItems = [
     { label: 'Users', icon: RiUserLine, path: '/admin' },
     { label: 'Reservations', icon: RiCarLine, path: '/admin/reservations' },
+    { label: 'Inquiries', icon: RiErrorWarningLine, path: '/admin/inquiries' },
     { 
       label: 'Vehicles', 
       icon: RiCarLine, 
@@ -72,7 +74,6 @@ export const AdminNavbar = () => {
       children: [
         { label: 'Vehicle List', icon: RiFileList3Line, path: '/admin/vehicles-list' },
         { label: 'Vehicle Applications', icon: RiFileList3Line, path: '/admin/vehicle-applications' },
-        { label: 'Customer Vehicle', icon: RiCarWashingLine, path: '/admin/vehicle-register' },
         { label: 'Company Vehicle', icon: RiCarWashingLine, path: '/admin/company-vehicle-register' },
       ]
     },
@@ -323,9 +324,6 @@ export const AdminNavbar = () => {
           </div>
         </div>
       </nav>
-
-      {/* Spacer to push content below navbar */}
-      <div className="h-14"></div>
     </>
   );
 };

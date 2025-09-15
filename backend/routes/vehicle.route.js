@@ -20,20 +20,26 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Vehicle application routes
+// Public routes
+router.get('/', vehicleController.getAllAvailableVehicles); 
+router.get('/search', vehicleController.searchVehicles); 
+router.get('/:id', vehicleController.getVehicleById);
+
+// Authenticated user routes
 router.post('/register', isAuthenticated, upload.single('image'), vehicleController.registerVehicle);
 
-// Public vehicle routes
-router.get('/', vehicleController.getAllAvailableVehicles); // Modified to be public
-router.get('/search', vehicleController.searchVehicles); // Added from fleet routes
-
-// Admin direct vehicle management routes
+// Admin routes
 router.post('/', isAuthenticated, isAdmin, vehicleController.createVehicle);
-router.get('/admin/all', isAuthenticated, isAdmin, vehicleController.getAllVehicles); // Route changed to avoid conflict
-router.get('/admin/company', isAuthenticated, isAdmin, vehicleController.getCompanyVehicles); // Added from fleet routes
-router.get('/admin/customer', isAuthenticated, isAdmin, vehicleController.getCustomerVehicles); // Added from fleet routes
-router.get('/:id', vehicleController.getVehicleById); // Made public
+router.get('/admin/all', isAuthenticated, isAdmin, vehicleController.getAllVehicles); 
+router.get('/admin/company', isAuthenticated, isAdmin, vehicleController.getCompanyVehicles); 
+router.get('/admin/customer', isAuthenticated, isAdmin, vehicleController.getCustomerVehicles); 
 router.put('/:id', isAuthenticated, isAdmin, vehicleController.updateVehicle);
 router.delete('/:id', isAuthenticated, isAdmin, vehicleController.deleteVehicle);
+
+// Vehicle application routes 
+router.get('/admin/applications', isAuthenticated, isAdmin, vehicleController.getAllVehicleApplications);
+router.get('/admin/applications/:id', isAuthenticated, isAdmin, vehicleController.getVehicleApplicationById);
+router.put('/admin/applications/:id/approve', isAuthenticated, isAdmin, vehicleController.approveVehicleApplication);
+router.put('/admin/applications/:id/reject', isAuthenticated, isAdmin, vehicleController.rejectVehicleApplication);
 
 export default router;

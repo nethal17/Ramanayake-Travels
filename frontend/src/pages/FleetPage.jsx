@@ -1,194 +1,167 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FaSearch, FaSortAmountDown, FaSortAmountUp } from 'react-icons/fa';
 import VehicleCard from '../components/VehicleCard';
-import VehicleSearchBar from '../components/VehicleSearchBar';
-import { FaCar, FaShuttleVan, FaBusAlt, FaFilter } from 'react-icons/fa';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const FleetPage = () => {
   const [vehicles, setVehicles] = useState([]);
+  const [filteredVehicles, setFilteredVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({
-    make: '',
-    model: '',
-    minPrice: '',
-    maxPrice: '',
-    year: '',
-    fuelType: '',
-    transmission: '',
-    minSeats: '',
-    maxDoors: ''
-  });
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:5001/api/vehicles');
+        setVehicles(response.data);
+        setFilteredVehicles(response.data);
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load vehicles. Please try again later.');
+        setLoading(false);
+        console.error('Error fetching vehicles:', err);
+      }
+    };
+
     fetchVehicles();
   }, []);
 
-  const fetchVehicles = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('http://localhost:5001/api/vehicles/search');
-      setVehicles(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to load vehicles. Please try again later.');
-      setLoading(false);
-      console.error('Error fetching vehicles:', err);
+  useEffect(() => {
+    // Apply search and sort
+    let result = [...vehicles];
+    
+    // Search
+    if (searchTerm) {
+      result = result.filter(vehicle => 
+        `${vehicle.make} ${vehicle.model}`.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  };
+    
+    // Sort
+    result = sortVehicles(result);
+    
+    setFilteredVehicles(result);
+  }, [vehicles, searchTerm, sortOption, sortDirection]);
 
-  const handleSearch = async (searchParams) => {
-    try {
-      setLoading(true);
-      setFilters(searchParams);
+  const sortVehicles = (vehiclesToSort) => {
+    return [...vehiclesToSort].sort((a, b) => {
+      let comparison = 0;
       
-      // Build query string from search params
-      const queryParams = new URLSearchParams();
-      Object.entries(searchParams).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value);
-      });
+      switch (sortOption) {
+        case 'name':
+          // First compare by make
+          comparison = a.make.localeCompare(b.make);
+          // If makes are the same, compare by model
+          if (comparison === 0) {
+            comparison = a.model.localeCompare(b.model);
+          }
+          break;
+        case 'price':
+          comparison = a.dailyRate - b.dailyRate;
+          break;
+        case 'year':
+          comparison = a.year - b.year;
+          break;
+        default:
+          comparison = 0;
+      }
       
-      const response = await axios.get(`http://localhost:5001/api/vehicles/search?${queryParams}`);
-      setVehicles(response.data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to search vehicles. Please try again later.');
-      setLoading(false);
-      console.error('Error searching vehicles:', err);
-    }
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      make: '',
-      model: '',
-      minPrice: '',
-      maxPrice: '',
-      year: '',
-      fuelType: '',
-      transmission: '',
-      minSeats: '',
-      maxDoors: ''
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
-    setActiveCategory('all');
-    fetchVehicles();
-  };
-  
-  // Filter vehicles by type (car, van, bus)
-  const filterByType = (type) => {
-    setActiveCategory(type);
-    
-    if (type === 'all') {
-      fetchVehicles();
-      return;
-    }
-    
-    // Filter vehicles locally based on type
-    setLoading(true);
-    
-    const filteredVehicles = vehicles.filter(vehicle => {
-      const combined = (vehicle.make + ' ' + vehicle.model).toLowerCase();
-      
-      if (type === 'car' && !combined.includes('bus') && !combined.includes('van') && 
-          !combined.includes('coach') && !combined.includes('hiace')) {
-        return true;
-      }
-      
-      if (type === 'van' && (combined.includes('van') || combined.includes('hiace'))) {
-        return true;
-      }
-      
-      if (type === 'bus' && (combined.includes('bus') || combined.includes('coach'))) {
-        return true;
-      }
-      
-      return false;
-    });
-    
-    setVehicles(filteredVehicles);
-    setLoading(false);
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Our Fleet</h1>
-      
-      {/* Vehicle type categories */}
-      <div className="flex flex-wrap justify-center gap-4 mb-8">
-        <button
-          onClick={() => filterByType('all')}
-          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
-            activeCategory === 'all' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <FaFilter /> All Vehicles
-        </button>
-        <button
-          onClick={() => filterByType('car')}
-          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
-            activeCategory === 'car' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <FaCar /> Cars
-        </button>
-        <button
-          onClick={() => filterByType('van')}
-          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
-            activeCategory === 'van' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <FaShuttleVan /> Vans
-        </button>
-        <button
-          onClick={() => filterByType('bus')}
-          className={`px-4 py-2 rounded-full flex items-center gap-2 transition-colors ${
-            activeCategory === 'bus' 
-              ? 'bg-blue-600 text-white' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          <FaBusAlt /> Buses
-        </button>
-      </div>
-      
-      <div className="mb-8">
-        <VehicleSearchBar 
-          onSearch={handleSearch} 
-          onReset={handleResetFilters}
-          initialFilters={filters}
-        />
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        </div>
-      ) : error ? (
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleSortChange = (e) => {
+    setSortOption(e.target.value);
+  };
+
+  const toggleSortDirection = () => {
+    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  };
+
+  if (loading) {
+    return <LoadingSpinner fullScreen={true} />;
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
         <div className="text-red-500 text-center p-4 bg-red-100 rounded-md">
           {error}
         </div>
-      ) : vehicles.length === 0 ? (
-        <div className="text-center p-8 bg-gray-100 rounded-md">
-          <p className="text-lg text-gray-600">No vehicles found matching your criteria.</p>
-          <button 
-            onClick={handleResetFilters}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8 text-center">Our Fleet</h1>
+      
+      {/* Search and Sort Bar */}
+      <div className="mb-8 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-grow">
+          <input
+            type="text"
+            placeholder="Search by make or model..."
+            className="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
+          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        </div>
+        
+        <div className="flex items-center">
+          <select
+            value={sortOption}
+            onChange={handleSortChange}
+            className="p-3 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Reset Filters
+            <option value="name">Make & Model</option>
+            <option value="price">Price</option>
+            <option value="year">Year</option>
+          </select>
+          <button
+            onClick={toggleSortDirection}
+            className="p-3 bg-gray-200 border-y border-r border-gray-300 rounded-r-md hover:bg-gray-300"
+          >
+            {sortDirection === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />}
           </button>
         </div>
-      ) : (
+      </div>
+      
+      {/* Results count */}
+      <div className="mb-6">
+        <p className="text-gray-600">
+          Showing {filteredVehicles.length} of {vehicles.length} vehicles
+        </p>
+      </div>
+      
+      {/* Vehicle Grid */}
+      {filteredVehicles.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map(vehicle => (
+          {filteredVehicles.map(vehicle => (
             <VehicleCard key={vehicle._id} vehicle={vehicle} />
           ))}
+        </div>
+      ) : (
+        <div className="text-center p-8 bg-gray-50 rounded-lg">
+          <p className="text-gray-500 text-lg">No vehicles match your criteria.</p>
+          <button
+            onClick={() => {
+              setSearchTerm('');
+            }}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Clear search
+          </button>
         </div>
       )}
     </div>

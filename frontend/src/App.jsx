@@ -23,7 +23,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminUserList from './components/AdminUserList';
 import AdminVehicleApplications from './components/AdminVehicleApplications';
 import AdminVehiclesList from './pages/AdminVehiclesList';
-import AdminVehicleRegister from './pages/AdminVehicleRegister';
 import CompanyVehicleRegister from './pages/CompanyVehicleRegister';
 import AdminReservations from './pages/AdminReservations';
 import AddDriverPage from './pages/AddDriverPage';
@@ -34,6 +33,7 @@ import AdminTechnicianManagement from './components/AdminTechnicianManagement'; 
 import AdminMaintenanceManagement from './components/AdminMaintenanceManagement';
 import AddTechnician from './components/AddTechnician';
 import ScheduleMaintenance from './components/ScheduleMaintenance';
+import AdminInquiriesManagement from './pages/AdminInquiriesManagement';
 
 import HomePage from './pages/HomePage';
 import ForgotPassword from './pages/ForgotPassword';
@@ -92,7 +92,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="vehicle-applications" element={<AdminVehicleApplications />} />
           <Route path="vehicles-list" element={<AdminVehiclesList />} />
-          <Route path="vehicle-register" element={<AdminVehicleRegister />} />
+          {/* Removed customer vehicle registration */}
           <Route path="company-vehicle-register" element={<CompanyVehicleRegister />} />
           <Route path="reservations" element={<AdminReservations />} />
           <Route path="add-driver" element={<AddDriverPage />} />
@@ -101,6 +101,7 @@ function App() {
           <Route path="technician-management/add" element={<AddTechnician />} />
           <Route path="maintenance-management" element={<AdminMaintenanceManagement />} />
           <Route path="maintenance-management/add" element={<ScheduleMaintenance />} />
+          <Route path="inquiries" element={<AdminInquiriesManagement />} />
           {/* Add more admin routes as needed */}
         </Route>
         

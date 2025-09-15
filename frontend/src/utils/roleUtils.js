@@ -25,7 +25,7 @@ export const getProfilePath = (user) => {
   if (isDriver(user)) {
     return '/driver-profile';
   } else if (isAdmin(user)) {
-    return '/admin/dashboard';
+    return '/admin/';
   } else if (isTechnician(user)) {
     return '/technician-profile';
   } else {

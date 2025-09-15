@@ -30,7 +30,7 @@ const AdminVehicleApplications = () => {
     setError(null);
     try {
       // Using fetch API instead of axios
-      const res = await fetch("/api/admin/vehicles", {
+      const res = await fetch("/api/vehicles/admin/applications", {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem('token')}`,
@@ -56,7 +56,7 @@ const AdminVehicleApplications = () => {
 
   const handleApprove = async (id) => {
     try {
-      const res = await fetch(`/api/admin/vehicles/${id}/approve`, {
+      const res = await fetch(`/api/vehicles/admin/applications/${id}/approve`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem('token')}`,
@@ -84,7 +84,7 @@ const AdminVehicleApplications = () => {
 
   const handleReject = async (id) => {
     try {
-      const res = await fetch(`/api/admin/vehicles/${id}/reject`, {
+      const res = await fetch(`/api/vehicles/admin/applications/${id}/reject`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${localStorage.getItem('token')}`,

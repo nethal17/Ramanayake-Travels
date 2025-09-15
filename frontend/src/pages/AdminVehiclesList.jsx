@@ -12,7 +12,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const AdminVehiclesList = () => {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, company, customer
+  const [filter, setFilter] = useState('all'); 
   const [searchTerm, setSearchTerm] = useState('');
   const { getAuthHeaders } = useAuth();
   

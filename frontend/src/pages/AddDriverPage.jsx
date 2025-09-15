@@ -10,7 +10,9 @@ import {
   RiMailLine,
   RiPhoneLine,
   RiMapPinLine,
-  RiCalendarLine
+  RiCalendarLine,
+  RiErrorWarningLine,
+  RiCheckLine
 } from 'react-icons/ri';
 import { useAuth } from '../hooks/useAuth';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -26,6 +28,13 @@ const AddDriverPage = () => {
     age: '',
     address: ''
   });
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    age: '',
+    address: ''
+  });
   const [files, setFiles] = useState({
     frontLicense: null,
     backLicense: null
@@ -35,12 +44,70 @@ const AddDriverPage = () => {
     backLicense: null
   });
 
+  const validateEmail = (email) => {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+  };
+
+  const validatePhone = (phone) => {
+    // Check if starts with +94 followed by 9 digits
+    const re1 = /^\+94\d{9}$/;
+    // Check if starts with 0 followed by 9 digits
+    const re2 = /^0\d{9}$/;
+    return re1.test(phone) || re2.test(phone);
+  };
+
+  const validateAge = (age) => {
+    const ageNum = parseInt(age);
+    return !isNaN(ageNum) && ageNum >= 18 && ageNum <= 70;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    // Validate on change
+    validateField(name, value);
+  };
+
+  const validateField = (name, value) => {
+    let errorMessage = '';
+    
+    switch (name) {
+      case 'email':
+        if (!value) {
+          errorMessage = 'Email is required';
+        } else if (!validateEmail(value)) {
+          errorMessage = 'Please enter a valid email address';
+        }
+        break;
+      case 'phone':
+        if (!value) {
+          errorMessage = 'Phone number is required';
+        } else if (!validatePhone(value)) {
+          errorMessage = 'Phone must start with +94 or 0 followed by 9 digits';
+        }
+        break;
+      case 'age':
+        if (!value) {
+          errorMessage = 'Age is required';
+        } else if (!validateAge(value)) {
+          errorMessage = 'Age must be between 18 and 70';
+        }
+        break;
+      default:
+        break;
+    }
+    
+    setErrors(prev => ({
+      ...prev,
+      [name]: errorMessage
+    }));
+    
+    return !errorMessage;
   };
 
   const handleFileChange = (e, type) => {
@@ -70,30 +137,27 @@ const AddDriverPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate all fields before submission
+    const isNameValid = validateField('name', formData.name);
+    const isEmailValid = validateField('email', formData.email);
+    const isPhoneValid = validateField('phone', formData.phone);
+    const isAgeValid = validateField('age', formData.age);
+    const isAddressValid = validateField('address', formData.address);
+    
+    if (!isNameValid || !isEmailValid || !isPhoneValid || !isAgeValid || !isAddressValid) {
+      toast.error('Please fix the errors before submitting');
+      return;
+    }
+    
+    if (!files.frontLicense || !files.backLicense) {
+      toast.error('Please upload both front and back images of driving license');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      // Validation
-      if (!formData.name || !formData.email || !formData.phone || !formData.age || !formData.address) {
-        toast.error('Please fill in all fields');
-        return;
-      }
-
-      if (!files.frontLicense || !files.backLicense) {
-        toast.error('Please upload both front and back images of driving license');
-        return;
-      }
-
-      if (parseInt(formData.age) < 18 || parseInt(formData.age) > 70) {
-        toast.error('Driver age must be between 18 and 70 years');
-        return;
-      }
-
-      if (formData.phone.length !== 10) {
-        toast.error('Phone number must be 10 digits');
-        return;
-      }
-
       // Create FormData
       const data = new FormData();
       Object.keys(formData).forEach(key => {
@@ -156,34 +220,57 @@ const AddDriverPage = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Full Name *
-                  </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name *
+                </label>
+                <div className="relative">
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.name ? 'border-red-500 bg-red-50' : formData.name ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                    }`}
                     placeholder="Enter driver's full name"
                     required
                   />
+                  {formData.name && !errors.name && (
+                    <RiCheckLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500" />
+                  )}
                 </div>
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                )}
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Age *
                   </label>
-                  <input
-                    type="number"
-                    name="age"
-                    value={formData.age}
-                    onChange={handleInputChange}
-                    min="18"
-                    max="70"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter age"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="age"
+                      value={formData.age}
+                      onChange={handleInputChange}
+                      min="18"
+                      max="70"
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.age ? 'border-red-500 bg-red-50' : formData.age ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter age (18-70)"
+                      required
+                    />
+                    {formData.age && !errors.age && (
+                      <RiCheckLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500" />
+                    )}
+                    {errors.age && (
+                      <RiErrorWarningLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" />
+                    )}
+                  </div>
+                  {errors.age && (
+                    <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -199,46 +286,83 @@ const AddDriverPage = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address *
                   </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter email address"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.email ? 'border-red-500 bg-red-50' : formData.email ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter email address"
+                      required
+                    />
+                    {formData.email && !errors.email && (
+                      <RiCheckLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500" />
+                    )}
+                    {errors.email && (
+                      <RiErrorWarningLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" />
+                    )}
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Phone Number *
                   </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    pattern="[0-9]{10}"
-                    maxLength="10"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter 10-digit phone number"
-                    required
-                  />
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        errors.phone ? 'border-red-500 bg-red-50' : formData.phone ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                      }`}
+                      placeholder="Format: +94XXXXXXXXX or 0XXXXXXXXX"
+                      required
+                    />
+                    {formData.phone && !errors.phone && (
+                      <RiCheckLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-500" />
+                    )}
+                    {errors.phone && (
+                      <RiErrorWarningLine className="absolute right-3 top-1/2 transform -translate-y-1/2 text-red-500" />
+                    )}
+                  </div>
+                  {errors.phone && (
+                    <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    Must start with +94 or 0, followed by 9 digits
+                  </p>
                 </div>
               </div>
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Address *
                 </label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter complete address"
-                  required
-                />
+                <div className="relative">
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    rows="3"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.address ? 'border-red-500 bg-red-50' : formData.address ? 'border-green-500 bg-green-50' : 'border-gray-300'
+                    }`}
+                    placeholder="Enter complete address"
+                    required
+                  />
+                  {formData.address && !errors.address && (
+                    <RiCheckLine className="absolute right-3 top-4 text-green-500" />
+                  )}
+                </div>
+                {errors.address && (
+                  <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+                )}
               </div>
             </div>
 

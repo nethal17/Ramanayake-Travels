@@ -7,11 +7,11 @@ import { connectDB } from './lib/db.js';
 import authRoutes from "./routes/user.route.js";
 import vehicleRoutes from './routes/vehicle.route.js';
 import profileRoutes from './routes/profile.route.js';
-import adminRoutes from './routes/admin.route.js';
 import reservationRoutes from './routes/reservation.route.js';
 import driverRoutes from './routes/driver.route.js';
 import technicianRoutes from './routes/technician.route.js';
 import maintenanceRoutes from './routes/maintenance.route.js';
+import inquiryRoutes from './routes/inquiry.route.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -28,6 +28,12 @@ const PORT = process.env.PORT || 5000;
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
 	fs.mkdirSync(uploadsDir);
+}
+
+// Ensure inquiries uploads directory exists
+const inquiriesUploadsDir = path.join(__dirname, 'uploads/inquiries');
+if (!fs.existsSync(inquiriesUploadsDir)) {
+	fs.mkdirSync(inquiriesUploadsDir, { recursive: true });
 }
 
 app.use(cors({
@@ -53,10 +59,10 @@ app.use("/api/auth", authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/reservations', reservationRoutes);
-app.use('/api', adminRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/technicians', technicianRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/inquiries', inquiryRoutes);
 
 app.listen(PORT, () => {
 	console.log("Server is running on http://localhost:" + PORT);

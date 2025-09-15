@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
-import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUserAlt, FaPhoneAlt, FaEnvelope, FaUserTie } from 'react-icons/fa';
+import { FaCalendarAlt, FaClock, FaMapMarkerAlt, FaUserAlt, FaPhoneAlt, FaEnvelope, FaUserTie, FaExclamationCircle } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 import { apiGet } from '../utils/apiUtils';
 
@@ -13,6 +13,11 @@ const ReservationForm = ({ vehicle }) => {
   const [loading, setLoading] = useState(false);
   const [availableDrivers, setAvailableDrivers] = useState([]);
   const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [errors, setErrors] = useState({
+    pickupDate: '',
+    returnDate: '',
+    phone: ''
+  });
   const [formData, setFormData] = useState({
     pickupDate: '',
     returnDate: '',
@@ -31,6 +36,51 @@ const ReservationForm = ({ vehicle }) => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     });
+    
+    // Validate dates
+    if (name === 'pickupDate' || name === 'returnDate') {
+      const selectedDate = new Date(value);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to beginning of day for fair comparison
+      
+      if (selectedDate < today) {
+        setErrors(prev => ({ ...prev, [name]: 'Date cannot be in the past' }));
+      } else {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
+      
+      // Additional validation for return date
+      if (name === 'returnDate' && formData.pickupDate) {
+        const pickupDate = new Date(formData.pickupDate);
+        if (selectedDate < pickupDate) {
+          setErrors(prev => ({ ...prev, returnDate: 'Return date must be after pickup date' }));
+        }
+      }
+      
+      // If pickup date changes, validate return date as well
+      if (name === 'pickupDate' && formData.returnDate) {
+        const returnDate = new Date(formData.returnDate);
+        if (returnDate < selectedDate) {
+          setErrors(prev => ({ ...prev, returnDate: 'Return date must be after pickup date' }));
+        } else {
+          setErrors(prev => ({ ...prev, returnDate: '' }));
+        }
+      }
+    }
+    
+    // Validate phone number
+    if (name === 'phone') {
+      // Check if starts with +94 followed by 9 digits or 0 followed by 9 digits
+      const phoneRegex = /^(\+94\d{9}|0\d{9})$/;
+      if (!phoneRegex.test(value)) {
+        setErrors(prev => ({ 
+          ...prev, 
+          phone: 'Phone must be 10 digits starting with +94 or 0' 
+        }));
+      } else {
+        setErrors(prev => ({ ...prev, phone: '' }));
+      }
+    }
     
     // If pickup date or return date changed and both are set, fetch available drivers
     if ((name === 'pickupDate' || name === 'returnDate') && 
@@ -106,18 +156,35 @@ const ReservationForm = ({ vehicle }) => {
       return;
     }
     
+    // Check for validation errors
+    if (errors.pickupDate || errors.returnDate || errors.phone) {
+      toast.error('Please fix the validation errors before submitting');
+      return;
+    }
+    
     // Validate dates
     const pickup = new Date(formData.pickupDate);
     const returnDate = new Date(formData.returnDate);
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to beginning of day
     
     if (pickup < today) {
+      setErrors(prev => ({ ...prev, pickupDate: 'Pickup date cannot be in the past' }));
       toast.error('Pickup date cannot be in the past');
       return;
     }
     
     if (returnDate < pickup) {
+      setErrors(prev => ({ ...prev, returnDate: 'Return date must be after pickup date' }));
       toast.error('Return date must be after pickup date');
+      return;
+    }
+    
+    // Validate phone format
+    const phoneRegex = /^(\+94\d{9}|0\d{9})$/;
+    if (!phoneRegex.test(formData.phone)) {
+      setErrors(prev => ({ ...prev, phone: 'Phone must be 10 digits starting with +94 or 0' }));
+      toast.error('Please enter a valid phone number');
       return;
     }
     
@@ -189,9 +256,15 @@ const ReservationForm = ({ vehicle }) => {
               name="pickupDate"
               value={formData.pickupDate}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full p-3 border ${errors.pickupDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
               required
+              min={new Date().toISOString().split('T')[0]} // Set min to today's date
             />
+            {errors.pickupDate && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <FaExclamationCircle className="mr-1" /> {errors.pickupDate}
+              </p>
+            )}
           </div>
           
           <div>
@@ -204,9 +277,15 @@ const ReservationForm = ({ vehicle }) => {
               name="returnDate"
               value={formData.returnDate}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full p-3 border ${errors.returnDate ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
               required
+              min={formData.pickupDate || new Date().toISOString().split('T')[0]} // Set min to pickup date or today
             />
+            {errors.returnDate && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <FaExclamationCircle className="mr-1" /> {errors.returnDate}
+              </p>
+            )}
           </div>
           
           <div>
@@ -317,10 +396,15 @@ const ReservationForm = ({ vehicle }) => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="Your phone number"
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Your phone number (e.g., 0771234567 or +94771234567)"
+              className={`w-full p-3 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
               required
             />
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <FaExclamationCircle className="mr-1" /> {errors.phone}
+              </p>
+            )}
           </div>
           
           <div className="md:col-span-2">

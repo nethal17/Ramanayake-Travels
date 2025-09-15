@@ -19,8 +19,18 @@ const AddTechnician = () => {
     certExpiryDate: '',
     certificateImage: null
   });
+  const [errors, setErrors] = useState({
+    email: '',
+    age: '',
+    certIssueDate: ''
+  });
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const validateEmail = (email) => {
+    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(String(email).toLowerCase());
+  };
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -38,11 +48,75 @@ const AddTechnician = () => {
         ...formData,
         [name]: value
       });
+      
+      // Validation
+      const newErrors = { ...errors };
+      
+      if (name === 'email') {
+        if (!validateEmail(value) && value.trim() !== '') {
+          newErrors.email = 'Please enter a valid email address';
+        } else {
+          newErrors.email = '';
+        }
+      }
+      
+      if (name === 'age') {
+        if (parseInt(value) < 18 && value.trim() !== '') {
+          newErrors.age = 'Age must be 18 or older';
+        } else {
+          newErrors.age = '';
+        }
+      }
+      
+      if (name === 'certIssueDate') {
+        const selectedDate = new Date(value);
+        const today = new Date();
+        
+        if (selectedDate > today) {
+          newErrors.certIssueDate = 'Issue date cannot be in the future';
+        } else {
+          newErrors.certIssueDate = '';
+        }
+      }
+      
+      setErrors(newErrors);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Final validation check
+    const newErrors = { ...errors };
+    let hasErrors = false;
+    
+    // Validate email
+    if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+      hasErrors = true;
+    }
+    
+    // Validate age
+    if (parseInt(formData.age) < 18) {
+      newErrors.age = 'Age must be 18 or older';
+      hasErrors = true;
+    }
+    
+    // Validate issue date
+    const issueDate = new Date(formData.certIssueDate);
+    const today = new Date();
+    if (issueDate > today) {
+      newErrors.certIssueDate = 'Issue date cannot be in the future';
+      hasErrors = true;
+    }
+    
+    setErrors(newErrors);
+    
+    if (hasErrors) {
+      toast.error('Please fix the validation errors');
+      return;
+    }
+    
     setLoading(true);
     try {
       const formDataObj = new FormData();
@@ -86,7 +160,15 @@ const AddTechnician = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Email</label>
-            <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" required />
+            <input 
+              type="email" 
+              name="email" 
+              value={formData.email} 
+              onChange={handleInputChange} 
+              className={`w-full px-3 py-2 border rounded-md ${errors.email ? 'border-red-500' : ''}`}
+              required 
+            />
+            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Phone</label>
@@ -94,7 +176,16 @@ const AddTechnician = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Age</label>
-            <input type="number" name="age" value={formData.age} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" required />
+            <input 
+              type="number" 
+              name="age" 
+              value={formData.age} 
+              onChange={handleInputChange} 
+              min="18"
+              className={`w-full px-3 py-2 border rounded-md ${errors.age ? 'border-red-500' : ''}`}
+              required 
+            />
+            {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age}</p>}
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium mb-1">Address</label>
@@ -114,7 +205,16 @@ const AddTechnician = () => {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Issue Date</label>
-            <input type="date" name="certIssueDate" value={formData.certIssueDate} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-md" required />
+            <input 
+              type="date" 
+              name="certIssueDate" 
+              value={formData.certIssueDate} 
+              onChange={handleInputChange} 
+              max={new Date().toISOString().split('T')[0]}
+              className={`w-full px-3 py-2 border rounded-md ${errors.certIssueDate ? 'border-red-500' : ''}`}
+              required 
+            />
+            {errors.certIssueDate && <p className="text-red-500 text-xs mt-1">{errors.certIssueDate}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Expiry Date (optional)</label>
