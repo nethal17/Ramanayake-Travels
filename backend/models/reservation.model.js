@@ -62,6 +62,13 @@ const reservationSchema = new mongoose.Schema({
     enum: ['unpaid', 'partially_paid', 'paid'],
     default: 'unpaid'
   },
+  billDetails: {
+    receiptNumber: { type: String },
+    paymentDate: { type: Date },
+    paymentMethod: { type: String },
+    amountPaid: { type: Number },
+    notes: { type: String }
+  },
   notes: { 
     type: String 
   },

@@ -14,6 +14,7 @@ const DriverInquiryForm = ({ onSuccess }) => {
     priority: 'medium'
   });
   
+  const [validationErrors, setValidationErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState([]);
   const [imagePreview, setImagePreview] = useState([]);
@@ -55,6 +56,29 @@ const DriverInquiryForm = ({ onSuccess }) => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation errors when user makes changes
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
+    
+    // Real-time validation for description length
+    if (name === 'description') {
+      if (value.length > 0 && value.length < 25) {
+        setValidationErrors(prev => ({
+          ...prev,
+          description: `Description must be at least 25 characters (${value.length}/25)`
+        }));
+      } else {
+        setValidationErrors(prev => ({
+          ...prev,
+          description: null
+        }));
+      }
+    }
   };
   
   const handleImageChange = (e) => {
@@ -85,7 +109,7 @@ const DriverInquiryForm = ({ onSuccess }) => {
     
     setImagePreview(prev => {
       const updated = [...prev];
-      // Revoke the object URL to avoid memory leaks
+  
       URL.revokeObjectURL(updated[index].preview);
       updated.splice(index, 1);
       return updated;
@@ -95,8 +119,22 @@ const DriverInquiryForm = ({ onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.subject.trim() || !formData.description.trim()) {
-      toast.error('Subject and description are required');
+    // Validate form
+    const errors = {};
+    
+    if (!formData.subject.trim()) {
+      errors.subject = 'Subject is required';
+    }
+    
+    if (!formData.description.trim()) {
+      errors.description = 'Description is required';
+    } else if (formData.description.trim().length < 25) {
+      errors.description = `Description must be at least 25 characters (${formData.description.length}/25)`;
+    }
+    
+    // If there are validation errors, show them and prevent submission
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
     
@@ -137,6 +175,7 @@ const DriverInquiryForm = ({ onSuccess }) => {
         });
         setImages([]);
         setImagePreview([]);
+        setValidationErrors({});
         
         // Call onSuccess callback if provided
         if (onSuccess) {
@@ -228,16 +267,19 @@ const DriverInquiryForm = ({ onSuccess }) => {
             name="subject"
             value={formData.subject}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`w-full px-3 py-2 border ${validationErrors.subject ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
             placeholder="Brief subject of your inquiry"
             required
           />
+          {validationErrors.subject && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.subject}</p>
+          )}
         </div>
         
         {/* Description */}
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-            Description
+            Description <span className="text-xs text-gray-500">(minimum 25 characters)</span>
           </label>
           <textarea
             id="description"
@@ -245,10 +287,19 @@ const DriverInquiryForm = ({ onSuccess }) => {
             value={formData.description}
             onChange={handleChange}
             rows="4"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Detailed description of the issue"
+            className={`w-full px-3 py-2 border ${validationErrors.description ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
+            placeholder="Detailed description of the issue (at least 25 characters)"
             required
           ></textarea>
+          {validationErrors.description && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.description}</p>
+          )}
+          <div className="mt-1 text-xs text-gray-500 flex justify-between">
+            <span>Characters: {formData.description.length}</span>
+            <span className={formData.description.length >= 25 ? 'text-green-600' : ''}>
+              {formData.description.length >= 25 ? '✓ Minimum length met' : `${formData.description.length}/25 characters`}
+            </span>
+          </div>
         </div>
         
         {/* Location */}
@@ -388,7 +439,7 @@ const DriverInquiryForm = ({ onSuccess }) => {
           <button
             type="submit"
             className="w-full flex justify-center items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-            disabled={isSubmitting || !formData.subject || !formData.description}
+            disabled={isSubmitting || !formData.subject || !formData.description || formData.description.length < 25}
           >
             {isSubmitting ? (
               <>

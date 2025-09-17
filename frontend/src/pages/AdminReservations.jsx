@@ -15,7 +15,8 @@ import {
   FaSearch,
   FaFilter,
   FaSortAmountDown,
-  FaSortAmountUp
+  FaSortAmountUp,
+  FaMoneyBillWave
 } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -36,11 +37,24 @@ const AdminReservations = () => {
   const [sortOrder, setSortOrder] = useState('desc');
   const [sortField, setSortField] = useState('createdAt');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [statusChangeInfo, setStatusChangeInfo] = useState({
     reservationId: null,
     newStatus: null,
     message: ''
   });
+  const [paymentInfo, setPaymentInfo] = useState({
+    reservationId: null,
+    paymentStatus: 'unpaid',
+    billDetails: {
+      receiptNumber: '',
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentMethod: 'Cash',
+      amountPaid: 0,
+      notes: ''
+    }
+  });
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Fetch reservations on component mount
   // Function to fetch reservations data
@@ -102,6 +116,121 @@ const AdminReservations = () => {
       toast.success(`Reservation status updated to ${newStatus}`);
     } catch (err) {
       toast.error('Failed to update reservation status');
+    }
+  };
+
+  // Open payment modal
+  const openPaymentModal = (reservationId) => {
+    const reservation = reservations.find(r => r._id === reservationId);
+    if (!reservation) return;
+    
+    setPaymentInfo({
+      reservationId,
+      paymentStatus: reservation.paymentStatus || 'unpaid',
+      billDetails: {
+        receiptNumber: reservation.billDetails?.receiptNumber || `RCPT-${Date.now().toString().slice(-6)}`,
+        paymentDate: reservation.billDetails?.paymentDate ? 
+          new Date(reservation.billDetails.paymentDate).toISOString().split('T')[0] : 
+          new Date().toISOString().split('T')[0],
+        paymentMethod: reservation.billDetails?.paymentMethod || 'Cash',
+        amountPaid: reservation.billDetails?.amountPaid || reservation.totalPrice || 0,
+        notes: reservation.billDetails?.notes || ''
+      }
+    });
+    
+    // Clear any previous validation errors
+    setValidationErrors({});
+    
+    setShowPaymentModal(true);
+  };
+  
+  // Validate payment form
+  const validatePaymentForm = () => {
+    const errors = {};
+    
+    // Get the reservation
+    const reservation = reservations.find(r => r._id === paymentInfo.reservationId);
+    if (!reservation) {
+      errors.general = "Invalid reservation";
+      return errors;
+    }
+    
+    // Date validation - for future dates (if setting a future payment date)
+    const currentDate = new Date();
+    const paymentDate = new Date(paymentInfo.billDetails.paymentDate);
+    const pickupDate = new Date(reservation.pickupDate);
+    
+    // If payment date is in the future, ensure it's not more than a week ahead of pickup
+    if (paymentDate > currentDate) {
+      // Only enforce the 1-week rule for unpaid reservations
+      if (paymentInfo.paymentStatus !== 'paid') {
+        const oneWeekFromNow = new Date();
+        oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+        
+        if (paymentDate > oneWeekFromNow) {
+          errors.paymentDate = "Future payment date cannot be more than a week from today";
+        }
+      }
+    }
+    
+    // If pickup date is less than a week away, show a warning but allow it
+    // (this is for editing existing reservations)
+    const oneWeekFromNow = new Date();
+    oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 7);
+    
+    if (pickupDate < oneWeekFromNow && paymentInfo.paymentStatus !== 'paid') {
+      errors.pickupDateWarning = "Note: Pickup date is less than a week away. Consider prioritizing payment.";
+    }
+    
+    // Payment value validation
+    const amountPaid = parseFloat(paymentInfo.billDetails.amountPaid);
+    const totalPrice = parseFloat(reservation.totalPrice);
+    
+    if (isNaN(amountPaid) || amountPaid <= 0) {
+      errors.amountPaid = "Payment amount must be a positive number";
+    } else if (amountPaid < totalPrice * 0.1 && paymentInfo.paymentStatus === 'paid') {
+      errors.amountPaid = "Payment amount is too low. Must be at least 10% of total price for 'Paid' status";
+    } else if (amountPaid > totalPrice * 1.1) {
+      errors.amountPaid = "Payment amount exceeds the reservation price by more than 10%";
+    }
+    
+    // Receipt number validation
+    if (!paymentInfo.billDetails.receiptNumber.trim()) {
+      errors.receiptNumber = "Receipt number is required";
+    }
+    
+    // Payment method validation
+    if (!paymentInfo.billDetails.paymentMethod.trim()) {
+      errors.paymentMethod = "Payment method is required";
+    }
+    
+    return errors;
+  };
+
+  // Handle payment status update
+  const handlePaymentUpdate = async () => {
+    // Validate form before submission
+    const errors = validatePaymentForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return; // Stop submission if there are errors
+    }
+    
+    try {
+      setShowPaymentModal(false);
+      
+      await apiPut(`/reservations/${paymentInfo.reservationId}/payment-status`, {
+        paymentStatus: paymentInfo.paymentStatus,
+        billDetails: paymentInfo.billDetails
+      });
+      
+      // Refresh reservations list
+      await fetchReservations();
+      
+      toast.success(`Payment status updated to ${paymentInfo.paymentStatus}`);
+    } catch (err) {
+      console.error('Error updating payment status:', err);
+      toast.error('Failed to update payment status');
     }
   };
 
@@ -415,6 +544,27 @@ const AdminReservations = () => {
                           </>
                         )}
                         
+                        {/* Payment status button for confirmed and completed reservations */}
+                        {(reservation.status === 'confirmed' || reservation.status === 'completed') && (
+                          <button
+                            onClick={() => openPaymentModal(reservation._id)}
+                            className={`px-3 py-1 rounded-md hover:opacity-90 flex items-center ${
+                              reservation.paymentStatus === 'paid' 
+                                ? 'bg-green-600 text-white' 
+                                : reservation.paymentStatus === 'partially_paid'
+                                  ? 'bg-yellow-600 text-white'
+                                  : 'bg-gray-600 text-white'
+                            }`}
+                          >
+                            <FaMoneyBillWave className="mr-1" /> 
+                            {reservation.paymentStatus === 'paid' 
+                              ? 'Paid' 
+                              : reservation.paymentStatus === 'partially_paid'
+                                ? 'Partially Paid'
+                                : 'Update Payment'}
+                          </button>
+                        )}
+                        
                         {/* View Details button for all statuses */}
                         <button
                           className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
@@ -449,6 +599,138 @@ const AdminReservations = () => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-xl font-semibold mb-4">Update Payment Status</h3>
+            
+            {/* General validation error */}
+            {validationErrors.general && (
+              <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+                {validationErrors.general}
+              </div>
+            )}
+            
+            {/* Pickup date warning */}
+            {validationErrors.pickupDateWarning && (
+              <div className="mb-4 p-2 bg-yellow-100 text-yellow-800 rounded">
+                {validationErrors.pickupDateWarning}
+              </div>
+            )}
+            
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Payment Status</label>
+              <select 
+                value={paymentInfo.paymentStatus}
+                onChange={(e) => setPaymentInfo({...paymentInfo, paymentStatus: e.target.value})}
+                className="w-full border rounded p-2"
+              >
+                <option value="unpaid">Unpaid</option>
+                <option value="partially_paid">Partially Paid</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Receipt Number</label>
+              <input 
+                type="text"
+                value={paymentInfo.billDetails.receiptNumber}
+                onChange={(e) => setPaymentInfo({
+                  ...paymentInfo, 
+                  billDetails: {...paymentInfo.billDetails, receiptNumber: e.target.value}
+                })}
+                className={`w-full border rounded p-2 ${validationErrors.receiptNumber ? 'border-red-500' : ''}`}
+              />
+              {validationErrors.receiptNumber && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.receiptNumber}</p>
+              )}
+            </div>
+            
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Payment Date</label>
+              <input 
+                type="date"
+                value={paymentInfo.billDetails.paymentDate}
+                onChange={(e) => setPaymentInfo({
+                  ...paymentInfo, 
+                  billDetails: {...paymentInfo.billDetails, paymentDate: e.target.value}
+                })}
+                className={`w-full border rounded p-2 ${validationErrors.paymentDate ? 'border-red-500' : ''}`}
+              />
+              {validationErrors.paymentDate && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.paymentDate}</p>
+              )}
+            </div>
+            
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Payment Method</label>
+              <select 
+                value={paymentInfo.billDetails.paymentMethod}
+                onChange={(e) => setPaymentInfo({
+                  ...paymentInfo, 
+                  billDetails: {...paymentInfo.billDetails, paymentMethod: e.target.value}
+                })}
+                className={`w-full border rounded p-2 ${validationErrors.paymentMethod ? 'border-red-500' : ''}`}
+              >
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Online Payment">Online Payment</option>
+                <option value="Other">Other</option>
+              </select>
+              {validationErrors.paymentMethod && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.paymentMethod}</p>
+              )}
+            </div>
+            
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Amount Paid (LKR)</label>
+              <input 
+                type="number"
+                value={paymentInfo.billDetails.amountPaid}
+                onChange={(e) => setPaymentInfo({
+                  ...paymentInfo, 
+                  billDetails: {...paymentInfo.billDetails, amountPaid: parseFloat(e.target.value) || 0}
+                })}
+                className={`w-full border rounded p-2 ${validationErrors.amountPaid ? 'border-red-500' : ''}`}
+              />
+              {validationErrors.amountPaid && (
+                <p className="text-red-500 text-sm mt-1">{validationErrors.amountPaid}</p>
+              )}
+            </div>
+            
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Notes</label>
+              <textarea 
+                value={paymentInfo.billDetails.notes}
+                onChange={(e) => setPaymentInfo({
+                  ...paymentInfo, 
+                  billDetails: {...paymentInfo.billDetails, notes: e.target.value}
+                })}
+                className="w-full border rounded p-2 h-20"
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaymentUpdate}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Update Payment
               </button>
             </div>
           </div>

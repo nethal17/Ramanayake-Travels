@@ -21,6 +21,7 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
     age: '',
     address: ''
   });
+  const [validationErrors, setValidationErrors] = useState({});
   const [files, setFiles] = useState({
     frontLicense: null,
     backLicense: null
@@ -48,6 +49,8 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
           ? `http://localhost:5001/uploads/${driver.drivingLicense.backImage}` 
           : null
       });
+      // Clear validation errors when dialog opens
+      setValidationErrors({});
     }
   }, [driver, isOpen]);
 
@@ -71,6 +74,14 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error for this field when user makes changes
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: null
+      }));
+    }
   };
 
   const handleFileChange = (e, type) => {
@@ -100,25 +111,47 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validate form
+    const errors = {};
+    
+    // Validate name
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required';
+    }
+    
+    // Validate age - must be at least 18
+    const age = parseInt(formData.age);
+    if (!formData.age || isNaN(age)) {
+      errors.age = 'Valid age is required';
+    } else if (age < 18) {
+      errors.age = 'Driver must be at least 18 years old';
+    } else if (age > 70) {
+      errors.age = 'Driver cannot be more than 70 years old';
+    }
+    
+    // Validate phone - must be 10 digits starting with 0 or +94
+    const phoneRegex = /^(0\d{9}|\+94\d{9})$/;
+    if (!formData.phone.trim()) {
+      errors.phone = 'Phone number is required';
+    } else if (!phoneRegex.test(formData.phone)) {
+      errors.phone = 'Phone must be 10 digits starting with 0 or +94';
+    }
+    
+    // Validate address
+    if (!formData.address.trim()) {
+      errors.address = 'Address is required';
+    }
+    
+    // If there are errors, display them and stop submission
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      // Validation
-      if (!formData.name || !formData.email || !formData.phone || !formData.age || !formData.address) {
-        toast.error('Please fill in all fields');
-        return;
-      }
-
-      if (parseInt(formData.age) < 18 || parseInt(formData.age) > 70) {
-        toast.error('Driver age must be between 18 and 70 years');
-        return;
-      }
-
-      if (formData.phone.length !== 10) {
-        toast.error('Phone number must be 10 digits');
-        return;
-      }
-
       // Create FormData
       const data = new FormData();
       Object.keys(formData).forEach(key => {
@@ -210,9 +243,12 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${validationErrors.name ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     required
                   />
+                  {validationErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -225,9 +261,12 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
                     onChange={handleInputChange}
                     min="18"
                     max="70"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border ${validationErrors.age ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     required
                   />
+                  {validationErrors.age && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.age}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -261,11 +300,13 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    pattern="[0-9]{10}"
-                    maxLength="10"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="0XXXXXXXXX or +94XXXXXXXXX"
+                    className={`w-full px-3 py-2 border ${validationErrors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                     required
                   />
+                  {validationErrors.phone && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
+                  )}
                 </div>
               </div>
               <div className="mt-4">
@@ -277,9 +318,12 @@ const UpdateDriverDialog = ({ isOpen, onClose, driver, onUpdate }) => {
                   value={formData.address}
                   onChange={handleInputChange}
                   rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border ${validationErrors.address ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                   required
                 />
+                {validationErrors.address && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.address}</p>
+                )}
               </div>
             </div>
 

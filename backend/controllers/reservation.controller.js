@@ -486,3 +486,49 @@ export async function updateTripStatus(req, res) {
     res.status(500).json({ message: 'Failed to update trip status', error: err.message });
   }
 }
+
+// Update payment status (admin only)
+export async function updatePaymentStatus(req, res) {
+  try {
+    const { reservationId } = req.params;
+    const { paymentStatus, billDetails } = req.body;
+    
+    
+    if (!['unpaid', 'partially_paid', 'paid'].includes(paymentStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status value' });
+    }
+    
+    const currentReservation = await Reservation.findById(reservationId);
+    
+    if (!currentReservation) {
+      return res.status(404).json({ message: 'Reservation not found' });
+    }
+    
+    
+    const updateFields = { 
+      paymentStatus, 
+      updatedAt: Date.now() 
+    };
+    
+ 
+    if (billDetails) {
+      updateFields.billDetails = billDetails;
+    }
+    
+    const reservation = await Reservation.findByIdAndUpdate(
+      reservationId,
+      updateFields,
+      { new: true, runValidators: true }
+    ).populate('vehicleId')
+      .populate('driverId')
+      .populate('userId', 'name email');
+    
+    res.status(200).json({
+      message: `Payment status updated to ${paymentStatus}`,
+      reservation
+    });
+  } catch (err) {
+    console.error('Error updating payment status:', err);
+    res.status(500).json({ message: 'Failed to update payment status', error: err.message });
+  }
+}

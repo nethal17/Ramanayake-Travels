@@ -20,5 +20,6 @@ router.put('/:reservationId/trip-status', isAuthenticated, isDriver, reservation
 // Admin routes
 router.get('/', isAuthenticated, isAdmin, reservationController.getAllReservations);
 router.put('/:reservationId/status', isAuthenticated, isAdmin, reservationController.updateReservationStatus);
+router.put('/:reservationId/payment-status', isAuthenticated, isAdmin, reservationController.updatePaymentStatus);
 
 export default router;

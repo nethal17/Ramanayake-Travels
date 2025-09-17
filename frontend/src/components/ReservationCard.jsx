@@ -28,6 +28,7 @@ const statusColors = {
 const ReservationCard = ({ reservation, index, onUpdate }) => {
   const { user } = useAuth();
   const [showCustomerDetails, setShowCustomerDetails] = useState(false);
+  const [showBillDetails, setShowBillDetails] = useState(false);
   const isDriver = user?.role === 'driver';
   
   // Handle undefined reservation prop
@@ -133,6 +134,11 @@ const ReservationCard = ({ reservation, index, onUpdate }) => {
   const toggleCustomerDetails = () => {
     setShowCustomerDetails(prev => !prev);
   };
+  
+  // Toggle bill details visibility
+  const toggleBillDetails = () => {
+    setShowBillDetails(prev => !prev);
+  };
 
   // Format date to readable format
   const formatDate = (dateString) => {
@@ -163,7 +169,7 @@ const ReservationCard = ({ reservation, index, onUpdate }) => {
     }
     
     // Regular reservation uses vehicleId
-    if (typeof reservation.vehicleId === 'object') {
+    if (typeof reservation.vehicleId === 'object' && reservation.vehicleId !== null) {
       return {
         id: reservation.vehicleId._id,
         make: reservation.vehicleId.make,
@@ -173,9 +179,9 @@ const ReservationCard = ({ reservation, index, onUpdate }) => {
       };
     }
     
-    // If vehicleId is just an ID string
+    // If vehicleId is just an ID string or is null/undefined
     return {
-      id: reservation.vehicleId,
+      id: reservation.vehicleId || 'unknown',
       make: '',
       model: 'Vehicle Details Not Available',
       year: '',
@@ -326,6 +332,80 @@ const ReservationCard = ({ reservation, index, onUpdate }) => {
           </>
         )}
         
+        {/* Bill Section for completed reservations */}
+        {reservation.status === 'completed' && (
+          <>
+            <button
+              onClick={toggleBillDetails}
+              className="mb-4 w-full flex items-center justify-center px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+            >
+              <FaMoneyBillWave className="mr-2" />
+              {showBillDetails ? 'Hide Payment Details' : 'View Payment Details'}
+            </button>
+            
+            {showBillDetails && (
+              <div className="mb-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-800 mb-3 text-center">Payment Receipt</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between border-b border-blue-200 pb-2">
+                    <span className="font-medium">Status:</span>
+                    <span className={`font-medium ${
+                      reservation.paymentStatus === 'paid' ? 'text-green-600' : 
+                      reservation.paymentStatus === 'partially_paid' ? 'text-yellow-600' : 
+                      'text-red-600'
+                    }`}>
+                      {reservation.paymentStatus === 'paid' ? 'Paid' : 
+                       reservation.paymentStatus === 'partially_paid' ? 'Partially Paid' : 
+                       'Unpaid'}
+                    </span>
+                  </div>
+                  
+                  {reservation.billDetails && (
+                    <>
+                      <div className="flex justify-between border-b border-blue-200 pb-2">
+                        <span className="font-medium">Receipt Number:</span>
+                        <span>{reservation.billDetails.receiptNumber || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between border-b border-blue-200 pb-2">
+                        <span className="font-medium">Payment Date:</span>
+                        <span>{reservation.billDetails.paymentDate ? 
+                          formatDate(reservation.billDetails.paymentDate) : 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between border-b border-blue-200 pb-2">
+                        <span className="font-medium">Payment Method:</span>
+                        <span>{reservation.billDetails.paymentMethod || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="flex justify-between border-b border-blue-200 pb-2">
+                        <span className="font-medium">Amount Paid:</span>
+                        <span className="font-semibold">
+                          Rs {reservation.billDetails.amountPaid?.toLocaleString() || '0'}
+                        </span>
+                      </div>
+                      
+                      {reservation.billDetails.notes && (
+                        <div className="border-b border-blue-200 pb-2">
+                          <span className="font-medium block">Notes:</span>
+                          <span className="text-sm">{reservation.billDetails.notes}</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  
+                  <div className="flex justify-between pt-2">
+                    <span className="font-medium">Total Amount:</span>
+                    <span className="font-bold">
+                      Rs {reservation.totalPrice?.toLocaleString() || '0'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+        
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2 justify-end mt-2">
           {/* Driver Trip Controls */}
@@ -361,12 +441,14 @@ const ReservationCard = ({ reservation, index, onUpdate }) => {
             </button>
           )}
           
-          <Link 
-            to={`/fleet/vehicles/${getVehicleData().id}`}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
-          >
-            View Vehicle
-          </Link>
+          {getVehicleData().id !== 'unknown' && (
+            <Link 
+              to={`/fleet/vehicles/${getVehicleData().id}`}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm"
+            >
+              View Vehicle
+            </Link>
+          )}
         </div>
       </div>
     </motion.div>

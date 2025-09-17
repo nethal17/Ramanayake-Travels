@@ -471,7 +471,7 @@ const TechnicianProfile = () => {
                         </div>
                         <div className="flex justify-between mt-1">
                           <span>Est. Cost:</span>
-                          <span>${task.estimatedCost ? task.estimatedCost.toFixed(2) : (task.cost ? task.cost.toFixed(2) : '0.00')}</span>
+                          <span>RS {task.estimatedCost ? task.estimatedCost.toFixed(2) : (task.cost ? task.cost.toFixed(2) : '0.00')}</span>
                         </div>
                       </div>
                     </div>
@@ -570,19 +570,19 @@ const TechnicianProfile = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">Parts Cost</p>
-                        <p className="font-medium">${selectedTask.partsCost ? selectedTask.partsCost.toFixed(2) : '0.00'}</p>
+                        <p className="font-medium">RS {selectedTask.partsCost ? selectedTask.partsCost.toFixed(2) : '0.00'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Labor Cost</p>
-                        <p className="font-medium">${selectedTask.laborCost ? selectedTask.laborCost.toFixed(2) : '0.00'}</p>
+                        <p className="font-medium">RS {selectedTask.laborCost ? selectedTask.laborCost.toFixed(2) : '0.00'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Additional Costs</p>
-                        <p className="font-medium">${selectedTask.additionalCosts ? selectedTask.additionalCosts.toFixed(2) : '0.00'}</p>
+                        <p className="font-medium">RS {selectedTask.additionalCosts ? selectedTask.additionalCosts.toFixed(2) : '0.00'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Total Cost</p>
-                        <p className="font-medium text-lg">${selectedTask.actualCost ? selectedTask.actualCost.toFixed(2) : '0.00'}</p>
+                        <p className="font-medium text-lg">RS {selectedTask.actualCost ? selectedTask.actualCost.toFixed(2) : '0.00'}</p>
                       </div>
                     </div>
                   </div>
@@ -719,7 +719,7 @@ const TechnicianProfile = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Actual Total Cost ($)
+                      Actual Total Cost (RS)
                     </label>
                     <input
                       type="number"
@@ -736,7 +736,7 @@ const TechnicianProfile = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Parts Cost ($)
+                      Parts Cost (RS)
                     </label>
                     <input
                       type="number"
@@ -751,7 +751,7 @@ const TechnicianProfile = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Labor Cost ($)
+                      Labor Cost (RS)
                     </label>
                     <input
                       type="number"
@@ -766,7 +766,7 @@ const TechnicianProfile = () => {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Additional Costs ($)
+                      Additional Costs (RS)
                     </label>
                     <input
                       type="number"
