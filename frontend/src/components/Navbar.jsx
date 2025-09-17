@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { RiArrowDropDownLine, RiMenu3Line, RiCloseLine, RiUserLine, RiLogoutBoxLine } from "react-icons/ri";
+import { RiMenu3Line, RiCloseLine, RiUserLine, RiLogoutBoxLine } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
@@ -15,11 +15,10 @@ export const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    const [openMenu, setOpenMenu] = useState(null); // 'service' | 'user' | null
+    const [openMenu, setOpenMenu] = useState(null); // 'user' | null
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [loginOpen, setLoginOpen] = useState(false);
     const [registerOpen, setRegisterOpen] = useState(false);
-    const serviceDropdownRef = useRef(null);
     const userDropdownRef = useRef(null);
     const sidebarRef = useRef(null);
     const fallbackAvatar = "https://i.pinimg.com/736x/0d/64/98/0d64989794b1a4c9d89bff571d3d5842.jpg";
@@ -33,14 +32,12 @@ export const Navbar = () => {
     useEffect(() => {
         // Close menus when clicking outside and close on Escape
         function handleClickOutside(event) {
-            if (serviceDropdownRef.current && !serviceDropdownRef.current.contains(event.target) && openMenu === 'service') {
-                setOpenMenu(null);
-            }
             if (userDropdownRef.current && !userDropdownRef.current.contains(event.target) && openMenu === 'user') {
                 setOpenMenu(null);
             }
         }
-    function handleKeyDown(event) {
+        
+        function handleKeyDown(event) {
             if (event.key === 'Escape') {
                 setOpenMenu(null);
                 setSidebarOpen(false);
@@ -64,9 +61,9 @@ export const Navbar = () => {
     return (
     <>
         {/* Main Navbar */}
-        <nav className="fixed top-0 z-50 flex lg-hidden items-center justify-between w-full p-3 text-lg  bg-gray-100 shadow-md font-normal">
+        <nav className="fixed top-0 z-50 flex lg-hidden items-center justify-between w-full p-2 text-lg bg-gray-100 shadow-md font-normal">
             {/* Logo */}
-            <div className="text-2xl font-bold text-gray-900 pl-6">Ramanayake<span className="text-blue-500"> Travels</span></div>
+            <div className="text-xl font-bold text-gray-900 pl-4">Ramanayake<span className="text-blue-500"> Travels</span></div>
 
             {/* Mobile Menu Button */}
             <button 
@@ -86,36 +83,11 @@ export const Navbar = () => {
             </button>
 
             {/* Desktop Navigation Links */}
-            <div className="items-center hidden lg:flex space-x-6 text-gray-900">
+            <div className="items-center hidden lg:flex space-x-4 text-gray-900">
             <Link to="/" className="hover:text-blue-500">Home</Link>
-
-                        {/* Services Dropdown - Desktop */}
-                        <div className="relative" ref={serviceDropdownRef}>
-                                <Dropdown
-                                    isOpen={openMenu === 'service'}
-                                    setIsOpen={(v) => setOpenMenu(v ? 'service' : null)}
-                                    menuId="service-menu"
-                                    button={
-                                        <div className="flex flex-row items-center hover:text-blue-500">
-                                            Our Services
-                                            <RiArrowDropDownLine size={30} />
-                                        </div>
-                                    }
-                                >
-                                    <ul className="flex flex-col p-2 w-55">
-                                        <li role="menuitem">
-                                            <Link to="/vehicle-registration" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Register Vehicle</Link>
-                                        </li>
-                                        <li role="menuitem">
-                                            <Link to="/organic-waste" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Vehicle Rentals</Link>
-                                        </li>
-                                        <li role="menuitem">
-                                            <Link to="/transport-service" className="block px-4 py-2 hover:bg-blue-500/20 rounded-md">Transport Service</Link>
-                                        </li>
-                                    </ul>
-                                </Dropdown>
-                        </div>
-
+            {isAuthenticated && (
+              <Link to="/vehicle-registration" className="hover:text-blue-500">Register Vehicle</Link>
+            )}
             <Link to="/fleet" className="hover:text-blue-500">Our Fleet</Link>
             <Link to="/contactus" className="hover:text-blue-500">Contact Us</Link>
             <Link to="/about-us" className="hover:text-blue-500">About Us</Link>
@@ -126,7 +98,6 @@ export const Navbar = () => {
             {isAuthenticated ? (
                                 <div className="relative flex items-center pr-6" ref={userDropdownRef}>
                                     <div className="flex items-center gap-3 pr-6">
-                                        <span className="hidden lg:inline">{(isAuthLoading || userLoading) ? "Loading..." : user?.email || "No Email"}</span>
                                         <Dropdown
                                             isOpen={openMenu === 'user'}
                                             setIsOpen={(v) => setOpenMenu(v ? 'user' : null)}
@@ -141,31 +112,36 @@ export const Navbar = () => {
                                                 />
                                             }
                                         >
-                                            <ul className="flex flex-col p-2 w-50">
-                                                <li role="menuitem">
-                                                    <Link 
-                                                        to={getProfilePath(user)}
-                                                        className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
-                                                        onClick={() => setOpenMenu(null)}
-                                                    >
-                                                        <RiUserLine size={16} />
-                                                        {isDriver(user) ? 'Driver Profile' : isTechnician(user) ? 'Technician Profile' : 'Profile'}
-                                                    </Link>
-                                                </li>
-                                                <li role="menuitem">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            handleLogout();
-                                                            setOpenMenu(null);
-                                                        }}
-                                                        className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
-                                                    >
-                                                        <RiLogoutBoxLine size={16} />
-                                                        Logout
-                                                    </button>
-                                                </li>
-                                            </ul>
+                                            <div className="p-2 min-w-[240px] max-w-[300px]">
+                                                <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-200 mb-2 truncate">
+                                                    {(isAuthLoading || userLoading) ? "Loading..." : user?.email || "No Email"}
+                                                </div>
+                                                <ul className="flex flex-col">
+                                                    <li role="menuitem">
+                                                        <Link 
+                                                            to={getProfilePath(user)}
+                                                            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
+                                                            onClick={() => setOpenMenu(null)}
+                                                        >
+                                                            <RiUserLine size={16} />
+                                                            {isDriver(user) ? 'Driver Profile' : isTechnician(user) ? 'Technician Profile' : 'Profile'}
+                                                        </Link>
+                                                    </li>
+                                                    <li role="menuitem">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleLogout();
+                                                                setOpenMenu(null);
+                                                            }}
+                                                            className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
+                                                        >
+                                                            <RiLogoutBoxLine size={16} />
+                                                            Logout
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </Dropdown>
                                     </div>
                                 </div>
@@ -257,54 +233,15 @@ export const Navbar = () => {
                 Home
                 </Link>
                 
-                {/* Mobile Services Dropdown */}
-                <div className="py-3 border-b border-gray-200">
-                <button
-                    type="button"
-                    onClick={() => setOpenMenu(prev => prev === 'service' ? null : 'service')}
-                    className="flex items-center justify-between w-full text-gray-900 hover:text-blue-500 focus:outline-none"
-                >
-                    <span>Our Services</span>
-                    <RiArrowDropDownLine 
-                    size={30} 
-                    className={`transform transition-transform ${openMenu === 'service' ? 'rotate-180' : ''}`} 
-                    />
-                </button>
-                
-                {openMenu === 'service' && (
-                    <div className="mt-2 ml-4">
-                    <ul className="flex flex-col space-y-2">
-                        <li>
-                        <Link 
-                            to="/vehicle-registration" 
-                            className="block py-2 text-gray-700 hover:text-blue-500"
-                            onClick={() => setSidebarOpen(false)}
-                        >
-                            Register Vehicle
-                        </Link>
-                        </li>
-                        <li>
-                        <Link 
-                            to="/organic-waste" 
-                            className="block py-2 text-gray-700 hover:text-blue-500"
-                            onClick={() => setSidebarOpen(false)}
-                        >
-                            Vehicle Rentals
-                        </Link>
-                        </li>
-                        <li>
-                        <Link 
-                            to="/transport-service" 
-                            className="block py-2 text-gray-700 hover:text-blue-500"
-                            onClick={() => setSidebarOpen(false)}
-                        >
-                            Transport Service
-                        </Link>
-                        </li>
-                    </ul>
-                </div>
+                {isAuthenticated && (
+                  <Link 
+                  to="/vehicle-registration" 
+                  className="py-3 border-b border-gray-200 text-gray-900 hover:text-blue-500"
+                  onClick={() => setSidebarOpen(false)}
+                  >
+                  Register Vehicle
+                  </Link>
                 )}
-                </div>
                 
                 <Link 
                 to="/fleet" 
