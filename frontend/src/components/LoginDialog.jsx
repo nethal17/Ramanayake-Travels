@@ -11,12 +11,15 @@ import {
   RiBusLine
 } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
+import TwoFactorLoginDialog from "./TwoFactorLoginDialog";
 
 export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showTwoFactorDialog, setShowTwoFactorDialog] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
   const dialogRef = useRef(null);
   const firstFieldRef = useRef(null);
   const navigate = useNavigate();
@@ -53,7 +56,9 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
         onClose?.();
         navigate("/");
       } else if (data?.requiresVerification) {
-        toast("2FA code sent to your email");
+        setUserEmail(data.email);
+        setShowTwoFactorDialog(true);
+        toast.success("Verification code sent to your email");
       } else {
         toast.error("Unexpected response");
       }
@@ -63,6 +68,14 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handle2FASuccess = (data) => {
+    window.dispatchEvent(new Event("auth-changed"));
+    toast.success("Logged in successfully!");
+    setShowTwoFactorDialog(false);
+    onClose?.();
+    navigate("/");
   };
 
   return (
@@ -208,6 +221,14 @@ export const LoginDialog = ({ open, onClose, onOpenRegister }) => {
           </motion.div>
         </motion.div>
       )}
+      
+      {/* Two-Factor Authentication Dialog */}
+      <TwoFactorLoginDialog
+        open={showTwoFactorDialog}
+        onClose={() => setShowTwoFactorDialog(false)}
+        email={userEmail}
+        onSuccess={handle2FASuccess}
+      />
     </AnimatePresence>
   );
 };

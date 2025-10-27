@@ -4,8 +4,9 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
-import { transporter, defaultMailOptions } from "../lib/nodemailer.js";
+import { transporter, defaultMailOptions, send2FASetupCode, send2FALoginCode } from "../lib/nodemailer.js";
 import { sendPasswordAfterVerification as sendDriverPassword } from "./driver.controller.js";
+import { setVerificationCode, validateVerificationCode, clearVerificationCode } from "../lib/twoFactor.js";
 
 // Generate JWT tokens
 const generateRefreshToken = (userId) => {
@@ -248,15 +249,14 @@ export const loginUser = async (req, res) => {
 
         // If 2FA is enabled, generate and send verification code
         if (user.twoFactorEnabled) {
-            const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-            user.twoStepVerificationCode = verificationCode;
-            user.twoStepVerificationExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+            const verificationCode = setVerificationCode(user);
             await user.save();
 
-            await sendVerificationCode(user.email, verificationCode);
+            await send2FALoginCode(user.email, user.name, verificationCode);
             
             return res.json({ 
                 requiresVerification: true,
+                email: user.email,
                 msg: "Verification code sent to your email"
             });
         }
@@ -576,6 +576,265 @@ export const changePassword = async (req, res) => {
     } catch (err) {
         console.error("Error changing password:", err);
         res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const toggleTwoFactorAuth = async (req, res) => {
+  try {
+    const { enable } = req.body;
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    // Record the 2FA toggle in login history
+    user.loginHistory.push({
+      ipAddress: req.ip,
+      deviceInfo: req.headers['user-agent'],
+      status: "success",
+      action: `Two-factor authentication ${enable ? 'enabled' : 'disabled'}`
+    });
+
+    user.twoFactorEnabled = enable;
+    user.lastSecurityUpdate = new Date();
+    await user.save();
+
+    res.json({ 
+      msg: `Two-factor authentication ${enable ? 'enabled' : 'disabled'} successfully`,
+      twoFactorEnabled: user.twoFactorEnabled 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server Error" });
+  }
+};
+
+export const verifyTwoStepCode = async (req, res) => {
+    const { userId, code } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        if (
+            user.twoStepVerificationCode === code &&
+            user.twoStepVerificationExpire > Date.now()
+        ) {
+            user.twoStepVerificationCode = undefined;
+            user.twoStepVerificationExpire = undefined;
+            await user.save();
+
+            const token = jwt.sign(
+                { id: user._id, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: "1d" }
+            );
+
+            // Return a single response with all necessary data
+            res.json({ 
+                token, 
+                user: { 
+                    _id: user._id,
+                    name: user.name, 
+                    email: user.email, 
+                    phone: user.phone,
+                    role: user.role,
+                    profilePic: user.profilePic,
+                    isVerified: user.isVerified,
+                    twoFactorEnabled: user.twoFactorEnabled,
+                    createdAt: user.createdAt
+                } 
+            });
+
+            user.isVerified = true;
+            await user.save();
+
+        } else {
+            res.status(400).json({ msg: "Invalid or expired verification code" });
+        }
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+};
+
+// Enable Two-Factor Authentication
+export const enableTwoFactor = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        // Check if user is admin (admins can't enable 2FA as per requirement)
+        if (user.role === 'admin') {
+            return res.status(403).json({ msg: "Admin accounts cannot enable two-factor authentication" });
+        }
+
+        // Generate and send verification code
+        const verificationCode = setVerificationCode(user);
+        await user.save();
+
+        // Send verification code via email
+        await send2FASetupCode(user.email, user.name, verificationCode);
+
+        res.json({ 
+            msg: "Verification code sent to your email. Please verify to enable two-factor authentication.",
+            codeExpiry: user.twoStepVerificationExpire 
+        });
+
+    } catch (err) {
+        console.error('Enable 2FA error:', err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+};
+
+// Verify 2FA Setup Code
+export const verifyTwoFactorSetup = async (req, res) => {
+    try {
+        const { code } = req.body;
+        const userId = req.user.id;
+        
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        // Validate the verification code
+        const validation = validateVerificationCode(
+            code, 
+            user.twoStepVerificationCode, 
+            user.twoStepVerificationExpire
+        );
+
+        if (!validation.valid) {
+            return res.status(400).json({ msg: validation.reason });
+        }
+
+        // Enable 2FA and clear verification code
+        user.twoFactorEnabled = true;
+        clearVerificationCode(user);
+        await user.save();
+
+        res.json({ 
+            msg: "Two-factor authentication enabled successfully",
+            twoFactorEnabled: true 
+        });
+
+    } catch (err) {
+        console.error('Verify 2FA setup error:', err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+};
+
+// Disable Two-Factor Authentication
+export const disableTwoFactor = async (req, res) => {
+    try {
+        const { password } = req.body;
+        const userId = req.user.id;
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        // Verify password before disabling 2FA
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ msg: "Invalid password" });
+        }
+
+        // Disable 2FA and clear any pending verification codes
+        user.twoFactorEnabled = false;
+        clearVerificationCode(user);
+        await user.save();
+
+        res.json({ 
+            msg: "Two-factor authentication disabled successfully",
+            twoFactorEnabled: false 
+        });
+
+    } catch (err) {
+        console.error('Disable 2FA error:', err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+};
+
+// Verify Login Code (for 2FA login)
+export const verifyLoginCode = async (req, res) => {
+    try {
+        const { email, code } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ msg: "User not found" });
+        }
+
+        // Validate the verification code
+        const validation = validateVerificationCode(
+            code, 
+            user.twoStepVerificationCode, 
+            user.twoStepVerificationExpire
+        );
+
+        if (!validation.valid) {
+            return res.status(400).json({ msg: validation.reason });
+        }
+
+        // Clear verification code and generate tokens
+        clearVerificationCode(user);
+        
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        user.refreshToken = refreshToken;
+        user.lastLogin = {
+            timestamp: new Date(),
+        };
+        await user.save();
+
+        // Set cookies
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 1 * 24 * 60 * 60 * 1000 // 1 day
+        });
+
+        res.json({ 
+            accessToken, 
+            user: { 
+                _id: user._id,
+                name: user.name, 
+                email: user.email, 
+                phone: user.phone,
+                role: user.role,
+                profilePic: user.profilePic,
+                isVerified: user.isVerified,
+                twoFactorEnabled: user.twoFactorEnabled,
+                createdAt: user.createdAt
+            } 
+        });
+
+    } catch (err) {
+        console.error('Verify login code error:', err);
+        res.status(500).json({ msg: "Server Error" });
     }
 };
 

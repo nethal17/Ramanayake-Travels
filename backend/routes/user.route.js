@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
-import {registerUser, loginUser, verifyEmail, refreshAccessToken, logoutUser, getUserById, getUsers, forgotPassword, resetPassword, changePassword, updateUserDetails} from "../controllers/user.controller.js";
+import {registerUser, loginUser, verifyEmail, refreshAccessToken, logoutUser, getUserById, getUsers, forgotPassword, resetPassword, changePassword, updateUserDetails, enableTwoFactor, verifyTwoFactorSetup, disableTwoFactor, verifyLoginCode} from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.js";
 import { adminRoute } from "../middleware/auth.js";
 
@@ -42,11 +42,17 @@ router.post("/refresh-token", refreshAccessToken);
 router.post("/logout", logoutUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+router.post("/verify-login-code", verifyLoginCode);
 
 // Protected routes
 router.post("/change-password/:id", protectRoute, changePassword);
 router.get("/searchUser/:id", protectRoute, getUserById);
 router.put("/update/:id", protectRoute, upload.single('profilePic'), updateUserDetails);
+
+// Two-Factor Authentication routes
+router.post("/enable-2fa", protectRoute, enableTwoFactor);
+router.post("/verify-2fa-setup", protectRoute, verifyTwoFactorSetup);
+router.post("/disable-2fa", protectRoute, disableTwoFactor);
 
 // Admin routes
 router.get("/allUsers", protectRoute, adminRoute, getUsers);

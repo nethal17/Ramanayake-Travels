@@ -7,6 +7,8 @@ import ReservationCard from "../components/ReservationCard";
 import MyVehiclesSection from "../components/MyVehiclesSection";
 import ChangePasswordDialog from "../components/ChangePasswordDialog";
 import EditProfileDialog from "../components/EditProfileDialog";
+import TwoFactorSetupDialog from "../components/TwoFactorSetupDialog";
+import DisableTwoFactorDialog from "../components/DisableTwoFactorDialog";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
@@ -17,6 +19,8 @@ export default function ProfilePage() {
   const [error, setError] = useState(null);
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false);
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
+  const [showTwoFactorSetupDialog, setShowTwoFactorSetupDialog] = useState(false);
+  const [showDisableTwoFactorDialog, setShowDisableTwoFactorDialog] = useState(false);
 
   useEffect(() => {
     fetchUserReservations();
@@ -166,6 +170,50 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 
+                {/* Two-Factor Authentication Section - Only for non-admin users */}
+                {user.role !== 'admin' && (
+                  <div className="mt-8">
+                    <h3 className="font-semibold mb-4">Security Settings</h3>
+                    <div className="bg-gray-50 p-4 rounded-md">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Two-Factor Authentication</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {user.twoFactorEnabled 
+                              ? 'Your account is protected with two-factor authentication'
+                              : 'Add an extra layer of security to your account'
+                            }
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            user.twoFactorEnabled 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {user.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                          {user.twoFactorEnabled ? (
+                            <button
+                              onClick={() => setShowDisableTwoFactorDialog(true)}
+                              className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                            >
+                              Disable
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setShowTwoFactorSetupDialog(true)}
+                              className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              Enable
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="flex flex-2 justify-end gap-4">
                   <button 
                     onClick={() => setShowEditProfileDialog(true)}
@@ -267,6 +315,26 @@ export default function ProfilePage() {
         onUpdateSuccess={() => {
           // Optionally refresh user data or handle success
           toast.success("Profile updated successfully!");
+        }}
+      />
+
+      {/* Two-Factor Setup Dialog */}
+      <TwoFactorSetupDialog 
+        open={showTwoFactorSetupDialog} 
+        onClose={() => setShowTwoFactorSetupDialog(false)}
+        onSuccess={() => {
+          // Refresh user data or update state to reflect 2FA enabled
+          window.location.reload();
+        }}
+      />
+
+      {/* Disable Two-Factor Dialog */}
+      <DisableTwoFactorDialog 
+        open={showDisableTwoFactorDialog} 
+        onClose={() => setShowDisableTwoFactorDialog(false)}
+        onSuccess={() => {
+          // Refresh user data or update state to reflect 2FA disabled
+          window.location.reload();
         }}
       />
     </div>

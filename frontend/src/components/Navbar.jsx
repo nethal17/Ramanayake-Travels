@@ -120,7 +120,7 @@ export const Navbar = () => {
                                                     <li role="menuitem">
                                                         <Link 
                                                             to={getProfilePath(user)}
-                                                            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
+                                                            className="flex items-center gap-2 px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900 cursor-pointer"
                                                             onClick={() => setOpenMenu(null)}
                                                         >
                                                             <RiUserLine size={16} />
@@ -134,7 +134,7 @@ export const Navbar = () => {
                                                                 handleLogout();
                                                                 setOpenMenu(null);
                                                             }}
-                                                            className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-blue-500/20 rounded-md text-gray-900"
+                                                            className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-blue-500/20 rounded-md text-red-500 cursor-pointer"
                                                         >
                                                             <RiLogoutBoxLine size={16} />
                                                             Logout

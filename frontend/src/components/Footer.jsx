@@ -80,7 +80,7 @@ export const Footer = () => {
               <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
                 <FaBus className="text-xl text-white" />
               </div>
-              <h3 className="text-2xl font-bold">Ramanayaka Transport</h3>
+              <h3 className="text-2xl font-bold">Ramanayaka Travels</h3>
             </motion.div>
             <p className="text-gray-500 mb-6 leading-relaxed">
               Your trusted partner for premium transportation services across Sri Lanka. 
@@ -231,7 +231,7 @@ export const Footer = () => {
           variants={itemVariants}
         >
           <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} Ramanayaka Transport. All rights reserved.
+            © {new Date().getFullYear()} Ramanayaka Travels. All rights reserved.
           </p>
           
           <div className="flex items-center gap-6 text-sm text-gray-500">

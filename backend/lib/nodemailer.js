@@ -50,4 +50,71 @@ export const sendEmail = async (options) => {
 	}
 };
 
+// Two-Factor Authentication email templates
+export const send2FASetupCode = async (email, name, code) => {
+	const html = `
+		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+			<div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+				<h1 style="color: #333; margin: 0;">Ramanayake Travels</h1>
+			</div>
+			<div style="padding: 30px;">
+				<h2 style="color: #333;">Enable Two-Step Verification</h2>
+				<p>Hello ${name},</p>
+				<p>You have requested to enable two-step verification for your account. Please use the verification code below to complete the setup:</p>
+				
+				<div style="background-color: #f8f9fa; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
+					<h1 style="color: #007bff; font-size: 32px; margin: 0; letter-spacing: 5px;">${code}</h1>
+				</div>
+				
+				<p>This code will expire in 10 minutes for security purposes.</p>
+				<p>If you didn't request this, please ignore this email or contact support if you have concerns.</p>
+				
+				<hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+				<p style="color: #666; font-size: 12px;">
+					This is an automated email from Ramanayake Travels. Please do not reply to this email.
+				</p>
+			</div>
+		</div>
+	`;
+	
+	return sendEmail({
+		to: email,
+		subject: 'Enable Two-Step Verification - Ramanayake Travels',
+		html
+	});
+};
+
+export const send2FALoginCode = async (email, name, code) => {
+	const html = `
+		<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+			<div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+				<h1 style="color: #333; margin: 0;">Ramanayake Travels</h1>
+			</div>
+			<div style="padding: 30px;">
+				<h2 style="color: #333;">Login Verification Code</h2>
+				<p>Hello ${name},</p>
+				<p>Someone is trying to sign in to your account. Please use the verification code below to complete your login:</p>
+				
+				<div style="background-color: #f8f9fa; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
+					<h1 style="color: #007bff; font-size: 32px; margin: 0; letter-spacing: 5px;">${code}</h1>
+				</div>
+				
+				<p>This code will expire in 10 minutes for security purposes.</p>
+				<p><strong>If this wasn't you, please secure your account immediately by changing your password.</strong></p>
+				
+				<hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+				<p style="color: #666; font-size: 12px;">
+					This is an automated email from Ramanayake Travels. Please do not reply to this email.
+				</p>
+			</div>
+		</div>
+	`;
+	
+	return sendEmail({
+		to: email,
+		subject: 'Login Verification Code - Ramanayake Travels',
+		html
+	});
+};
+
 export { transporter, defaultMailOptions };
